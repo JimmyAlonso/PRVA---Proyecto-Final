@@ -6,7 +6,7 @@ public record CodigoFolio(String valor) {
 
     public CodigoFolio {
         if (valor == null || valor.isBlank()) {
-            throw new ReglaDominioException("El código del folio es obligatorio.");
+            throw new ReglaDominioException("El código del folio es obligatoriou.");
         }
         valor = valor.trim();
     }
