@@ -11,7 +11,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
     class OcupanteTest {
 
-        /** RN-06: un ocupante es facturable si a la fecha de entrada alcanza el umbral configurado. */
+        /** RN-06: un ocupante es facturable si a la fecha de entrada alcanza o  el umbral o limite
+         *  configurado. */
         @Test
         void esFacturableSiAlcanzaUmbral(){
             Ocupante ocupanteNuevo = new Ocupante(
