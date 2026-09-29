@@ -4,12 +4,12 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 //Test para un objeto de valor
-class IdentificacionApartamentoTest {
+class IdentificacionDomoTest {
 
     @Test
     void verificarDosIdentificadoresConElMismoValorSonIguales(){
-        IdentificacionApartamento idUno = new IdentificacionApartamento("apto:01");
-        IdentificacionApartamento idDos = new IdentificacionApartamento("APTO:01");
+        IdentificacionDomo idUno = new IdentificacionDomo("apto:01");
+        IdentificacionDomo idDos = new IdentificacionDomo("APTO:01");
 
         assertEquals(idUno,idDos);
         assertEquals(idUno.hashCode(),idDos.hashCode());
@@ -17,7 +17,7 @@ class IdentificacionApartamentoTest {
 
     @Test
     void normalizarAMayusculas(){
-        IdentificacionApartamento idUno = new IdentificacionApartamento("apto:01");
+        IdentificacionDomo idUno = new IdentificacionDomo("apto:01");
 
         assertEquals("APTO:01",idUno.valor());
     }

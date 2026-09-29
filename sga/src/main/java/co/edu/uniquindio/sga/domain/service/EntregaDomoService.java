@@ -1,4 +1,4 @@
 package co.edu.uniquindio.sga.domain.service;
 
-public class CoincilacionCanalExternoService {
+public class EntregaDomoService {
 }

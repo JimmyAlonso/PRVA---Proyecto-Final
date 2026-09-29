@@ -3,7 +3,7 @@ package co.edu.uniquindio.sga.domain.entity;
 import co.edu.uniquindio.sga.domain.exception.ReglaDominioException;
 import co.edu.uniquindio.sga.domain.valueobject.EstadoOperativo;
 import co.edu.uniquindio.sga.domain.valueobject.IdTemporada;
-import co.edu.uniquindio.sga.domain.valueobject.IdentificacionApartamento;
+import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
 import co.edu.uniquindio.sga.domain.valueobject.Tarifa;
 
 import java.util.ArrayList;
@@ -14,9 +14,9 @@ import java.util.Optional;
 /**
  * Raíz del agregado Apartamento.
  */
-public class Apartamento {
+public class Domo {
 
-    private final IdentificacionApartamento identificacion;
+    private final IdentificacionDomo identificacion;
     private String nombre;
     private int dormitorios;
     private int capacidad;
@@ -25,7 +25,7 @@ public class Apartamento {
     // RN de oro #9: colección interna siempre de solo lectura; toda modificación reemplaza la referencia
     private List<Tarifa> tarifas = List.of();
 
-    public Apartamento(IdentificacionApartamento identificacion, String nombre, int dormitorios, int capacidad) {
+    public Domo(IdentificacionDomo identificacion, String nombre, int dormitorios, int capacidad) {
         if (identificacion == null) {
             throw new ReglaDominioException("El apartamento debe tener una identificación.");
         }
@@ -123,7 +123,7 @@ public class Apartamento {
         activo = false;
     }
 
-    public IdentificacionApartamento getIdentificacion() {
+    public IdentificacionDomo getIdentificacion() {
         return identificacion;
     }
 
@@ -156,7 +156,7 @@ public class Apartamento {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Apartamento that)) return false;
+        if (!(o instanceof Domo that)) return false;
         return Objects.equals(identificacion, that.identificacion);
     }
 

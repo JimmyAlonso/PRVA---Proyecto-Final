@@ -3,7 +3,7 @@ package co.edu.uniquindio.sga.domain.entity;
 import co.edu.uniquindio.sga.domain.exception.ReglaDominioException;
 import co.edu.uniquindio.sga.domain.valueobject.GravedadNovedad;
 import co.edu.uniquindio.sga.domain.valueobject.IdNovedad;
-import co.edu.uniquindio.sga.domain.valueobject.IdentificacionApartamento;
+import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
 
 import java.time.LocalDate;
 import java.util.Objects;
@@ -14,14 +14,14 @@ import java.util.Objects;
 public class Novedad {
 
     private final IdNovedad id;
-    private final IdentificacionApartamento apartamento;
+    private final IdentificacionDomo apartamento;
     private String descripcion;
     private GravedadNovedad gravedad;
     private final LocalDate fechaReporte;
     private boolean atendida;
 
-    public Novedad(IdNovedad id, IdentificacionApartamento apartamento, String descripcion,
-                    GravedadNovedad gravedad, LocalDate fechaReporte) {
+    public Novedad(IdNovedad id, IdentificacionDomo apartamento, String descripcion,
+                   GravedadNovedad gravedad, LocalDate fechaReporte) {
         if (id == null) {
             throw new ReglaDominioException("La novedad debe tener un identificador.");
         }
@@ -53,7 +53,7 @@ public class Novedad {
         return id;
     }
 
-    public IdentificacionApartamento getApartamento() {
+    public IdentificacionDomo getApartamento() {
         return apartamento;
     }
 

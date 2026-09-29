@@ -6,7 +6,7 @@ import co.edu.uniquindio.sga.domain.exception.ReglaDominioException;
 import co.edu.uniquindio.sga.domain.repository.BloqueoRepository;
 import co.edu.uniquindio.sga.domain.repository.ReservaRepository;
 import co.edu.uniquindio.sga.domain.valueobject.Estancia;
-import co.edu.uniquindio.sga.domain.valueobject.IdentificacionApartamento;
+import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
 import co.edu.uniquindio.sga.domain.valueobject.Periodo;
 import co.edu.uniquindio.sga.domain.valueobject.TiempoPreparacion;
 
@@ -18,17 +18,17 @@ import java.util.List;
  * vigente), RN-12 (las reservas no activas no cuentan) y RN-20 (tiempo de preparación entre
  * la salida de un grupo y la entrada del siguiente).
  */
-public class DisponibilidadApartamentoService {
+public class DisponibilidadDomoService {
 
     private final ReservaRepository reservaRepository;
     private final BloqueoRepository bloqueoRepository;
 
-    public DisponibilidadApartamentoService(ReservaRepository reservaRepository, BloqueoRepository bloqueoRepository) {
+    public DisponibilidadDomoService(ReservaRepository reservaRepository, BloqueoRepository bloqueoRepository) {
         this.reservaRepository = reservaRepository;
         this.bloqueoRepository = bloqueoRepository;
     }
 
-    public boolean estaDisponible(IdentificacionApartamento apartamento, Estancia estancia, TiempoPreparacion preparacion) {
+    public boolean estaDisponible(IdentificacionDomo apartamento, Estancia estancia, TiempoPreparacion preparacion) {
         Periodo periodo = new Periodo(estancia.fechaEntrada(), estancia.fechaSalida());
 
         List<Reserva> activas = reservaRepository.buscarActivasPorApartamento(apartamento, periodo);
@@ -58,7 +58,7 @@ public class DisponibilidadApartamentoService {
         return true;
     }
 
-    public void verificarDisponibilidad(IdentificacionApartamento apartamento, Estancia estancia, TiempoPreparacion preparacion) {
+    public void verificarDisponibilidad(IdentificacionDomo apartamento, Estancia estancia, TiempoPreparacion preparacion) {
         if (!estaDisponible(apartamento, estancia, preparacion)) {
             throw new ReglaDominioException(
                     "El apartamento no está disponible para la estancia solicitada.");

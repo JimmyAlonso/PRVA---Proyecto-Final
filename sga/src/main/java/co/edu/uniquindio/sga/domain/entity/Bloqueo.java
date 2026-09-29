@@ -3,7 +3,7 @@ package co.edu.uniquindio.sga.domain.entity;
 import co.edu.uniquindio.sga.domain.exception.ReglaDominioException;
 import co.edu.uniquindio.sga.domain.valueobject.Estancia;
 import co.edu.uniquindio.sga.domain.valueobject.IdBloqueo;
-import co.edu.uniquindio.sga.domain.valueobject.IdentificacionApartamento;
+import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
 import co.edu.uniquindio.sga.domain.valueobject.MotivoBloqueo;
 import co.edu.uniquindio.sga.domain.valueobject.Periodo;
 
@@ -16,14 +16,14 @@ import java.util.Objects;
 public class Bloqueo {
 
     private final IdBloqueo id;
-    private final IdentificacionApartamento apartamento;
+    private final IdentificacionDomo apartamento;
     private Periodo periodo;
     private final MotivoBloqueo motivo;
     private String observacion;
     private boolean vigente;
 
-    public Bloqueo(IdBloqueo id, IdentificacionApartamento apartamento, Periodo periodo,
-                    MotivoBloqueo motivo, String observacion) {
+    public Bloqueo(IdBloqueo id, IdentificacionDomo apartamento, Periodo periodo,
+                   MotivoBloqueo motivo, String observacion) {
         if (id == null) {
             throw new ReglaDominioException("El bloqueo debe tener un identificador.");
         }
@@ -62,7 +62,7 @@ public class Bloqueo {
         return id;
     }
 
-    public IdentificacionApartamento getApartamento() {
+    public IdentificacionDomo getApartamento() {
         return apartamento;
     }
 

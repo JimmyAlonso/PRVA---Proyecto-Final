@@ -3,7 +3,7 @@ package co.edu.uniquindio.sga.infraestructure.persistence.inmemory;
 import co.edu.uniquindio.sga.domain.entity.Reserva;
 import co.edu.uniquindio.sga.domain.repository.ReservaRepository;
 import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
-import co.edu.uniquindio.sga.domain.valueobject.IdentificacionApartamento;
+import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
 import co.edu.uniquindio.sga.domain.valueobject.Periodo;
 
 import java.util.HashMap;
@@ -15,7 +15,7 @@ public class ReservaRepositoryInMemory implements ReservaRepository {
     private final HashMap<CodigoReserva, Reserva> reservas = new HashMap<>();
 
     @Override
-    public List<Reserva> buscarActivasPorApartamento(IdentificacionApartamento apartamento, Periodo periodo) {
+    public List<Reserva> buscarActivasPorApartamento(IdentificacionDomo apartamento, Periodo periodo) {
         return reservas.values()
                 .stream()
                 .filter(reserva -> reserva.getApartamento().equals(apartamento))

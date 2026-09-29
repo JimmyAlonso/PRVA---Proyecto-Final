@@ -3,9 +3,9 @@ package co.edu.uniquindio.sga.domain.valueobject;
 import co.edu.uniquindio.sga.domain.exception.ReglaDominioException;
 
 // L-04: la identificación de cada apartamento es única y estable
-public record IdentificacionApartamento(String valor) {
+public record IdentificacionDomo(String valor) {
 
-    public IdentificacionApartamento {
+    public IdentificacionDomo {
         if (valor == null || valor.isBlank()) {
             throw new ReglaDominioException("La identificación del apartamento es obligatoria.");
         }

@@ -7,7 +7,7 @@ import co.edu.uniquindio.sga.domain.valueobject.Dinero;
 import co.edu.uniquindio.sga.domain.valueobject.Estancia;
 import co.edu.uniquindio.sga.domain.valueobject.EstadoReserva;
 import co.edu.uniquindio.sga.domain.valueobject.HoraEstimadaLlegada;
-import co.edu.uniquindio.sga.domain.valueobject.IdentificacionApartamento;
+import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificadorExterno;
 import co.edu.uniquindio.sga.domain.valueobject.UmbralEdadFacturable;
 import co.edu.uniquindio.sga.domain.valueobject.VersionPolitica;
@@ -28,7 +28,7 @@ import java.util.Objects;
 public class Reserva {
 
     private final CodigoReserva codigo;
-    private final IdentificacionApartamento apartamento;
+    private final IdentificacionDomo apartamento;
     private Estancia estancia;
     private EstadoReserva estado;
     private final CanalOrigen canalOrigen;
@@ -42,7 +42,7 @@ public class Reserva {
     private String motivoCancelacion;
 
     private Reserva(CodigoReserva codigo,
-                     IdentificacionApartamento apartamento,
+                     IdentificacionDomo apartamento,
                      Estancia estancia,
                      CanalOrigen canalOrigen,
                      Ocupante titular,
@@ -69,7 +69,7 @@ public class Reserva {
      * responsable de traer ese dato.
      */
     public static Reserva crear(CodigoReserva codigo,
-                                 IdentificacionApartamento apartamento,
+                                 IdentificacionDomo apartamento,
                                  int capacidadApartamento,
                                  Estancia estancia,
                                  Ocupante titular,
@@ -239,7 +239,7 @@ public class Reserva {
         return codigo;
     }
 
-    public IdentificacionApartamento getApartamento() {
+    public IdentificacionDomo getApartamento() {
         return apartamento;
     }
 
