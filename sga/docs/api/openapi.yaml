@@ -1,0 +1,393 @@
+openapi: 3.1.0
+info:
+  title: SGA - JiyJu Glamping API
+  description: >
+    Especificación de la API de Dominio para el Sistema de Gestión de Alojamiento (SGA)
+    aplicado a Kakaraka Glamping. Cubre los casos de uso principales para Huésped, Recepcionista,
+    Administrador y Canales Externos.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Servidor Local de Desarrollo
+
+paths:
+  /domos/disponibles:
+    get:
+      summary: Buscar y cotizar Domos disponibles
+      description: >
+        Consulta la disponibilidad de Domos para un rango de fechas y composición del grupo.
+        Aplica las reglas de solapamiento (RN-01), capacidad (RN-02) y recargo por ocupante adicional (L-20).
+      operationId: buscarCotizarDomos
+      parameters:
+        - name: fechaEntrada
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2026-10-10"
+        - name: fechaSalida
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2026-10-12"
+        - name: numeroOcupantes
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          example: 3
+      responses:
+        '200':
+          description: Lista de Domos disponibles con su cotización detallada.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CotizacionDomoResponse'
+        '400':
+          description: Error en parámetros de búsqueda (ej. fecha de salida anterior a entrada).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+
+  /reservas:
+    post:
+      summary: Crear una nueva reserva (Canal Portal / Directo)
+      description: >
+        Registra una reserva en estado PENDIENTE. Válida la estancia, capacidad y congela las tarifas vigentes.
+      operationId: crearReserva
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearReservaRequest'
+      responses:
+        '201':
+          description: Reserva creada exitosamente en estado PENDIENTE.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+        '400':
+          description: Violación de regla de dominio al intentar crear la reserva.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+
+  /reservas/{idReserva}/confirmar:
+    post:
+      summary: Confirmar una reserva
+      description: >
+        Transiciona el estado de PENDIENTE a CONFIRMADA. Evalúa la precondición L-21 (margen mínimo de 3 horas para alistamiento de Jacuzzi).
+      operationId: confirmarReserva
+      parameters:
+        - name: idReserva
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                horaEstimadaLlegada:
+                  type: string
+                  example: "16:30"
+              required:
+                - horaEstimadaLlegada
+      responses:
+        '200':
+          description: Reserva confirmada correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+        '400':
+          description: Regla L-21 violada (tiempo insuficiente para alistamiento de Jacuzzi).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+
+  /reservas/{idReserva}/cancelar:
+    post:
+      summary: Cancelar una reserva
+      description: Libera la disponibilidad e ingresa la penalidad al Folio según la política de cancelación congelada.
+      operationId: cancelarReserva
+      parameters:
+        - name: idReserva
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reserva cancelada y disponibilidad liberada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+
+  /reservas/{idReserva}/check-in:
+    post:
+      summary: Registrar llegada del grupo (Check-In / Entrega del Domo)
+      description: >
+        Cambia el estado de CONFIRMADA a EN_CURSO. Valida RN-11 (Domo PREPARADO) y la regla L-22 (Depósito congelado en el Folio).
+      operationId: registrarCheckIn
+      parameters:
+        - name: idReserva
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Check-in exitoso. El Domo pasa a estado OCUPADO.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+        '400':
+          description: Violación de regla L-22 (Falta registro del Depósito en el Folio) o Domo no preparado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+
+  /reservas/{idReserva}/check-out:
+    post:
+      summary: Registrar salida del grupo (Check-Out)
+      description: Transiciona la reserva a FINALIZADA. Exige que el Folio se encuentre en saldo $0 COP.
+      operationId: registrarCheckOut
+      parameters:
+        - name: idReserva
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Salida completada. El Domo pasa a PENDIENTE_PREPARACION.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+        '400':
+          description: El Folio posee saldo pendiente sin autorización del Administrador.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+
+  /reservas/{idReserva}/folio:
+    get:
+      summary: Consultar el Folio de la reserva
+      description: Obtiene el resumen de Cargos (alojamiento, Fogata, Depósito), Pagos y Saldo actual de la reserva.
+      operationId: consultarFolio
+      parameters:
+        - name: idReserva
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Folio de la reserva obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FolioResponse'
+
+  /canales/externo/reservas:
+    post:
+      summary: Procesar reserva desde un Canal Externo
+      description: Recibe peticiones de OTAs externas. Controla idempotencia (RN-19) y conflictos de disponibilidad (RN-18).
+      operationId: crearReservaExterna
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservaExternaRequest'
+      responses:
+        '201':
+          description: Reserva externa procesada e integrada con éxito.
+        '409':
+          description: Conflicto de canal detected. Se registra la novedad sin sobreescribir la disponibilidad.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+
+components:
+  schemas:
+    CotizacionDomoResponse:
+      type: object
+      properties:
+        idDomo:
+          type: string
+          example: "DOM-01"
+        nombre:
+          type: string
+          example: "Domo Estelar Alfa"
+        capacidadMaxima:
+          type: integer
+          example: 4
+        tieneJacuzzi:
+          type: boolean
+          example: true
+        valorTotalNoches:
+          type: number
+          example: 360000
+        recargoOcupanteAdicional:
+          type: number
+          example: 45000
+        valorTotalEstancia:
+          type: number
+          example: 405000
+
+    CrearReservaRequest:
+      type: object
+      required:
+        - idDomo
+        - fechaEntrada
+        - fechaSalida
+        - idTitular
+        - ocupantes
+      properties:
+        idDomo:
+          type: string
+          example: "DOM-01"
+        fechaEntrada:
+          type: string
+          format: date
+          example: "2026-10-10"
+        fechaSalida:
+          type: string
+          format: date
+          example: "2026-10-12"
+        idTitular:
+          type: string
+          example: "CC-1094888777"
+        ocupantes:
+          type: array
+          items:
+            $ref: '#/components/schemas/OcupanteSchema'
+
+    OcupanteSchema:
+      type: object
+      required:
+        - documento
+        - fechaNacimiento
+      properties:
+        documento:
+          type: string
+          example: "CC-1094888777"
+        fechaNacimiento:
+          type: string
+          format: date
+          example: "1995-05-15"
+
+    ReservaDetalleResponse:
+      type: object
+      properties:
+        idReserva:
+          type: string
+          format: uuid
+        idDomo:
+          type: string
+          example: "DOM-01"
+        estado:
+          type: string
+          enum: [PENDIENTE, CONFIRMADA, EN_CURSO, FINALIZADA, CANCELADA, NO_SHOW]
+          example: "PENDIENTE"
+        fechaEntrada:
+          type: string
+          format: date
+        fechaSalida:
+          type: string
+          format: date
+        horaEstimadaLlegada:
+          type: string
+          example: "16:00"
+
+    FolioResponse:
+      type: object
+      properties:
+        idFolio:
+          type: string
+          format: uuid
+        idReserva:
+          type: string
+          format: uuid
+        totalCargos:
+          type: number
+          example: 505000
+        totalPagos:
+          type: number
+          example: 200000
+        saldo:
+          type: number
+          example: 305000
+        cargos:
+          type: array
+          items:
+            type: object
+            properties:
+              concepto:
+                type: string
+                example: "Deposito de Garantia (L-22)"
+              monto:
+                type: number
+                example: 100000
+
+    ReservaExternaRequest:
+      type: object
+      required:
+        - idCanal
+        - idTransaccionExterna
+        - idDomo
+        - fechaEntrada
+        - fechaSalida
+      properties:
+        idCanal:
+          type: string
+          example: "BOOKING_COM"
+        idTransaccionExterna:
+          type: string
+          example: "EXT-998877"
+        idDomo:
+          type: string
+          example: "DOM-01"
+        fechaEntrada:
+          type: string
+          format: date
+        fechaSalida:
+          type: string
+          format: date
+
+    ErrorRespuesta:
+      type: object
+      properties:
+        codigoError:
+          type: string
+          example: "REGLA_DOMINIO_VIOLADA"
+        mensaje:
+          type: string
+          example: "L-22: El Folio debe tener registrado el Deposito para autorizar el Check-In."
