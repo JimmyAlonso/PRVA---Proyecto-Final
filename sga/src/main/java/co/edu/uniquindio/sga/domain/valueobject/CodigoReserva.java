@@ -9,5 +9,5 @@ public record CodigoReserva(String valor) {
             throw new ReglaDominioException("El código de la reserva es obligatorio.");
         }
         valor = valor.trim();
-    }
+    } // prubea commit
 }
