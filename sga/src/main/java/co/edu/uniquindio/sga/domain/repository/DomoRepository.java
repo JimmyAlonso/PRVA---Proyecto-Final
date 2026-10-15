@@ -1,17 +1,21 @@
 package co.edu.uniquindio.sga.domain.repository;
 
 import co.edu.uniquindio.sga.domain.entity.Domo;
-import co.edu.uniquindio.sga.domain.entity.Folio;
-import co.edu.uniquindio.sga.domain.entity.Novedad;
-import co.edu.uniquindio.sga.domain.entity.Temporada;
-import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
-import org.hibernate.internal.util.Optional;
 
 import java.util.List;
+import java.util.Optional;
 
-  public interface DomoRepository {
+// Corrección: antes importaba org.hibernate.internal.util.Optional (no compila y además
+// metía el framework en el dominio) y clases que no usaba.
+public interface DomoRepository {
+
     Optional<Domo> obtenerPorIdentificacion(IdentificacionDomo identificacion);
+
+    /** 7.3: los listados y búsquedas ignoran los domos eliminados (inactivos). */
     List<Domo> listarActivos();
+
+    List<Domo> listarTodos();
+
     void guardar(Domo domo);
 }

@@ -8,5 +8,10 @@ import java.util.List;
 
 public interface BloqueoRepository {
 
-    List<Bloqueo> buscarVigentesPorApartamento(IdentificacionDomo apartamento, Periodo periodo);
+    /** RN-07: bloqueos vigentes del domo que se solapan con el periodo. */
+    List<Bloqueo> buscarVigentesPorDomo(IdentificacionDomo domo, Periodo periodo);
+
+    List<Bloqueo> listarPorDomo(IdentificacionDomo domo);
+
+    void guardar(Bloqueo bloqueo);
 }
