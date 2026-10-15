@@ -15,8 +15,17 @@ public record Porcentaje(BigDecimal valor) {
         }
     }
 
+    public static Porcentaje de(long valor) {
+        return new Porcentaje(BigDecimal.valueOf(valor));
+    }
+
+    /** Aplica el porcentaje sin redondear: quien calcula el cargo decide cuándo redondear (3.4). */
     public Dinero aplicarA(Dinero monto) {
         BigDecimal resultado = monto.valor().multiply(valor).divide(BigDecimal.valueOf(100));
         return new Dinero(resultado);
+    }
+
+    public boolean esCero() {
+        return valor.signum() == 0;
     }
 }

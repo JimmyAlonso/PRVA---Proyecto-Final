@@ -23,6 +23,13 @@ public record Estancia(LocalDate fechaEntrada, LocalDate fechaSalida) {
         }
     }
 
+    /** RN-04: no se pueden crear reservas cuya fecha de entrada sea anterior a la fecha actual. */
+    public void verificarQueNoEmpiezaAntesDe(LocalDate fechaActual) {
+        if (fechaEntrada.isBefore(fechaActual)) {
+            throw new ReglaDominioException("La fecha de entrada no puede ser anterior a la fecha actual.");
+        }
+    }
+
     // La noche de salida no se ocupa ni se cobra
     public int noches() {
         return (int) (fechaSalida.toEpochDay() - fechaEntrada.toEpochDay());
@@ -32,7 +39,7 @@ public record Estancia(LocalDate fechaEntrada, LocalDate fechaSalida) {
         return !noche.isBefore(fechaEntrada) && noche.isBefore(fechaSalida);
     }
 
-    /** RN-01: un apartamento no puede tener dos reservas activas solapadas. */
+    /** RN-01: un domo no puede tener dos reservas activas solapadas. */
     public boolean seSolapaCon(Estancia otra) {
         return fechaEntrada.isBefore(otra.fechaSalida) && otra.fechaEntrada.isBefore(fechaSalida);
     }

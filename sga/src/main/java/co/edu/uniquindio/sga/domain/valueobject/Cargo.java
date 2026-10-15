@@ -2,6 +2,7 @@ package co.edu.uniquindio.sga.domain.valueobject;
 
 import co.edu.uniquindio.sga.domain.exception.ReglaDominioException;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 // RN-16: un cargo nunca se modifica ni se elimina; esInverso marca el movimiento de corrección.
@@ -18,5 +19,10 @@ public record Cargo(ConceptoCargo concepto, Dinero valor, LocalDate fecha, Strin
         if (fecha == null) {
             throw new ReglaDominioException("El cargo debe indicar su fecha.");
         }
+    }
+
+    /** Valor con signo: los movimientos inversos restan. */
+    public BigDecimal valorConSigno() {
+        return esInverso ? valor.valor().negate() : valor.valor();
     }
 }
