@@ -164,4 +164,7 @@ public class Folio {
     public int hashCode() {
         return Objects.hashCode(codigo);
     }
+
+    public boolean tieneDepositoRegistrado() {
+    }
 }

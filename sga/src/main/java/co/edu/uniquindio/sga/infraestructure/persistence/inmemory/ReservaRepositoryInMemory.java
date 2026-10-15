@@ -4,6 +4,7 @@ import co.edu.uniquindio.sga.domain.entity.Reserva;
 import co.edu.uniquindio.sga.domain.repository.ReservaRepository;
 import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
+import co.edu.uniquindio.sga.domain.valueobject.IdentificadorExterno;
 import co.edu.uniquindio.sga.domain.valueobject.Periodo;
 
 import java.util.HashMap;
@@ -31,5 +32,10 @@ public class ReservaRepositoryInMemory implements ReservaRepository {
     @Override
     public void guardar(Reserva reserva) {
         reservas.put(reserva.getCodigo(), reserva);
+    }
+
+    @Override
+    public Optional<Reserva> buscarPorIdentificadorExterno(IdentificadorExterno identificador) {
+        return Optional.empty();
     }
 }
