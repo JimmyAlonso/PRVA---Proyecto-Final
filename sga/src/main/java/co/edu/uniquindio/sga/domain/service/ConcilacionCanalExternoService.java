@@ -14,14 +14,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 // ConciliacionCanalExternoService.java — RN-18, RN-19
-public class ConciliacionCanalExternoService<ResultadoConciliacion> {
+public class ConcilacionCanalExternoService<ResultadoConciliacion> {
     private final ReservaRepository reservaRepository;
     private final DomoRepository domoRepository;
     private final NovedadRepository novedadRepository;
     private final DisponibilidadDomoService disponibilidadService;
     private final TiempoPreparacion tiempoPreparacion;
 
-    public ConciliacionCanalExternoService(ReservaRepository reservaRepository, DomoRepository domoRepository,
+    public ConcilacionCanalExternoService(ReservaRepository reservaRepository, DomoRepository domoRepository,
                                            NovedadRepository novedadRepository,
                                            DisponibilidadDomoService disponibilidadService,
                                            TiempoPreparacion tiempoPreparacion) {

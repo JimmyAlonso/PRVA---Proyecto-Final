@@ -15,18 +15,3 @@ import java.util.List;
     List<Domo> listarActivos();
     void guardar(Domo domo);
 }
-
-      public interface TemporadaRepository {
-        List<Temporada> listarTodas();
-        void guardar(Temporada temporada);
-    }
-
-      public interface FolioRepository {
-        Optional<Folio> obtenerPorReserva(CodigoReserva reserva);
-        void guardar(Folio folio);
-    }
-
-    public interface NovedadRepository {      // nuevo: para registrar conflictos (RN-18)
-        void guardar(Novedad novedad);
-    }
-
