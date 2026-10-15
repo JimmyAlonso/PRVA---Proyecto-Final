@@ -1,0 +1,83 @@
+### =====================================================================
+### Flujo completo de una reserva en JiyJu Glamping (para probar la API)
+### Cambie {{codigo}} por el código que devuelva el paso 3.
+### =====================================================================
+
+@base = http://localhost:8080/api/v1
+@codigo = RES-2026-00010
+
+### 1. Buscar domos para 2 adultos y 1 niña (la niña no paga tarifa, pero cuenta para la capacidad y el recargo L-20)
+GET {{base}}/domos/disponibles?fechaEntrada=2026-11-20&fechaSalida=2026-11-22&fechasNacimiento=1990-05-12,1988-02-01,2019-03-02
+
+### 2. Cotizar el DOM-03 con desglose noche por noche
+POST {{base}}/domos/DOM-03/cotizacion
+Content-Type: application/json
+
+{ "fechaEntrada": "2026-11-20", "fechaSalida": "2026-11-22",
+  "fechasNacimiento": ["1990-05-12", "1988-02-01", "2019-03-02"] }
+
+### 3. Crear la reserva (nace PENDIENTE y abre el folio)
+POST {{base}}/reservas
+Content-Type: application/json
+
+{
+  "idDomo": "DOM-03",
+  "fechaEntrada": "2026-11-20",
+  "fechaSalida": "2026-11-22",
+  "canalOrigen": "PORTAL",
+  "horaEstimadaLlegada": "18:30",
+  "titular": { "documento": "1094123456", "nombre": "Ana Ramírez", "fechaNacimiento": "1990-05-12",
+               "correo": "ana@correo.com", "telefono": "3001234567" },
+  "ocupantes": [
+    { "documento": "1094999888", "nombre": "Luis Ramírez", "fechaNacimiento": "1988-02-01" },
+    { "documento": "TI1030998877", "nombre": "Sofía Ramírez", "fechaNacimiento": "2019-03-02" }
+  ]
+}
+
+### 4. Intentar confirmar sin anticipo (422)
+POST {{base}}/reservas/{{codigo}}/confirmar
+
+### 5. Pagar el anticipo del 50 %
+POST {{base}}/reservas/{{codigo}}/folio/pagos
+Content-Type: application/json
+
+{ "monto": 562500, "medio": "TRANSFERENCIA" }
+
+### 6. Confirmar (L-21: con Jacuzzi la llegada debe ser desde las 18:00)
+POST {{base}}/reservas/{{codigo}}/confirmar
+Content-Type: application/json
+
+{ "horaEstimadaLlegada": "18:30" }
+
+### 7. Registrar el depósito (L-22, requisito del check-in)
+POST {{base}}/reservas/{{codigo}}/folio/deposito
+
+### 8. Servicio adicional: cena en el domo para 3 personas
+POST {{base}}/reservas/{{codigo}}/folio/servicios
+Content-Type: application/json
+
+{ "codigoServicio": "CENA_DOMO", "cantidad": 3 }
+
+### 9. Consultar el folio
+GET {{base}}/reservas/{{codigo}}/folio
+
+### 10. Check-in (solo desde la fecha de entrada y con el domo PREPARADO)
+POST {{base}}/reservas/{{codigo}}/check-in
+
+### 11. Check-out con saldo pendiente: exige autorización (RN-17)
+POST {{base}}/reservas/{{codigo}}/check-out
+Content-Type: application/json
+
+{ "autorizadoPor": "admin.jiyju", "motivoAutorizacion": "El saldo se paga por transferencia al día siguiente" }
+
+### 12. Personal de servicio: preparar el domo
+POST {{base}}/domos/DOM-03/estado-operativo
+Content-Type: application/json
+
+{ "accion": "INICIAR_PREPARACION" }
+
+### 13. Llegadas y salidas del día
+GET {{base}}/reservas/movimientos
+
+### 14. Listado filtrado y paginado
+GET {{base}}/reservas?estado=CONFIRMADA&pagina=0

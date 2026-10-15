@@ -1,0 +1,99 @@
+### =====================================================================
+### Simulador del canal externo (10.3.1, lado cliente) - JiyJu Glamping
+### Se ejecuta desde IntelliJ (archivo .http) o VS Code (extensión REST Client).
+### Escenarios exigidos: aceptada, en conflicto rechazada y registrada,
+### y mensaje repetido que no duplica la reserva.
+### =====================================================================
+
+@base = http://localhost:8080/api/v1
+@canal = BOOKING_COM
+@clave = clave-local-booking
+
+### 1. Consultar disponibilidad (operación 1)
+GET {{base}}/canales/externo/disponibilidad?fechaEntrada=2026-12-01&fechaSalida=2026-12-03&fechasNacimiento=1990-01-01,1992-05-05
+X-Canal-Id: {{canal}}
+X-Canal-Credencial: {{clave}}
+
+### 2. Escenario A - reserva externa ACEPTADA (201)
+POST {{base}}/canales/externo/reservas
+Content-Type: application/json
+X-Canal-Id: {{canal}}
+X-Canal-Credencial: {{clave}}
+
+{
+  "idTransaccionExterna": "EXT-5001",
+  "idDomo": "DOM-01",
+  "fechaEntrada": "2026-12-01",
+  "fechaSalida": "2026-12-03",
+  "horaEstimadaLlegada": "19:00",
+  "titular": {
+    "documento": "1094777001",
+    "nombre": "Mariana Ospina",
+    "fechaNacimiento": "1991-03-14",
+    "correo": "mariana@correo.com",
+    "telefono": "3105550001"
+  },
+  "ocupantes": [
+    { "documento": "1094777002", "nombre": "Julián Ospina", "fechaNacimiento": "1989-11-02" }
+  ]
+}
+
+### 3. Escenario B - MENSAJE REPETIDO: mismo idTransaccionExterna (200, no duplica)
+POST {{base}}/canales/externo/reservas
+Content-Type: application/json
+X-Canal-Id: {{canal}}
+X-Canal-Credencial: {{clave}}
+
+{
+  "idTransaccionExterna": "EXT-5001",
+  "idDomo": "DOM-01",
+  "fechaEntrada": "2026-12-01",
+  "fechaSalida": "2026-12-03",
+  "horaEstimadaLlegada": "19:00",
+  "titular": {
+    "documento": "1094777001",
+    "nombre": "Mariana Ospina",
+    "fechaNacimiento": "1991-03-14",
+    "correo": "mariana@correo.com",
+    "telefono": "3105550001"
+  },
+  "ocupantes": [
+    { "documento": "1094777002", "nombre": "Julián Ospina", "fechaNacimiento": "1989-11-02" }
+  ]
+}
+
+### 4. Escenario C - CONFLICTO: otra reserva sobre las mismas noches (409, queda registrada)
+POST {{base}}/canales/externo/reservas
+Content-Type: application/json
+X-Canal-Id: {{canal}}
+X-Canal-Credencial: {{clave}}
+
+{
+  "idTransaccionExterna": "EXT-5002",
+  "idDomo": "DOM-01",
+  "fechaEntrada": "2026-12-02",
+  "fechaSalida": "2026-12-04",
+  "titular": {
+    "documento": "1094777003",
+    "nombre": "Felipe Cano",
+    "fechaNacimiento": "1985-07-20",
+    "correo": "felipe@correo.com",
+    "telefono": "3105550003"
+  }
+}
+
+### 5. El administrador revisa los conflictos registrados
+GET {{base}}/canales/conflictos
+
+### 6. Cancelar la reserva externa (operación 3)
+POST {{base}}/canales/externo/reservas/EXT-5001/cancelar
+Content-Type: application/json
+X-Canal-Id: {{canal}}
+X-Canal-Credencial: {{clave}}
+
+{ "motivo": "El huésped canceló en la plataforma" }
+
+### 7. Credencial inválida (401)
+GET {{base}}/canales/externo/disponibilidad?fechaEntrada=2026-12-01&fechaSalida=2026-12-03&fechasNacimiento=1990-01-01
+X-Canal-Id: {{canal}}
+X-Canal-Credencial: clave-equivocada
