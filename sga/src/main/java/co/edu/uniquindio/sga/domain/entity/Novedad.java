@@ -4,29 +4,36 @@ import co.edu.uniquindio.sga.domain.exception.ReglaDominioException;
 import co.edu.uniquindio.sga.domain.valueobject.GravedadNovedad;
 import co.edu.uniquindio.sga.domain.valueobject.IdNovedad;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
+import co.edu.uniquindio.sga.domain.valueobject.TipoNovedad;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * Raíz del agregado Novedad.
+ * Raíz del agregado Novedad: reporte de un daño, faltante o situación en un domo (7.6), con
+ * fecha, autor, descripción y gravedad. También registra los conflictos de canal (RN-18).
  */
 public class Novedad {
 
     private final IdNovedad id;
-    private final IdentificacionDomo apartamento;
-    private String descripcion;
+    private final IdentificacionDomo domo;
+    private final TipoNovedad tipo;
+    private final String descripcion;
     private GravedadNovedad gravedad;
-    private final LocalDate fechaReporte;
+    private final String autor;
+    private final LocalDateTime momentoReporte;
     private boolean atendida;
 
-    public Novedad(IdNovedad id, IdentificacionDomo apartamento, String descripcion,
-                   GravedadNovedad gravedad, LocalDate fechaReporte) {
+    public Novedad(IdNovedad id, IdentificacionDomo domo, TipoNovedad tipo, String descripcion,
+                   GravedadNovedad gravedad, String autor, LocalDateTime momentoReporte) {
         if (id == null) {
             throw new ReglaDominioException("La novedad debe tener un identificador.");
         }
-        if (apartamento == null) {
-            throw new ReglaDominioException("La novedad debe indicar el apartamento afectado.");
+        if (domo == null) {
+            throw new ReglaDominioException("La novedad debe indicar el domo afectado.");
+        }
+        if (tipo == null) {
+            throw new ReglaDominioException("La novedad debe indicar su tipo.");
         }
         if (descripcion == null || descripcion.isBlank()) {
             throw new ReglaDominioException("La novedad debe tener una descripción.");
@@ -34,15 +41,27 @@ public class Novedad {
         if (gravedad == null) {
             throw new ReglaDominioException("La novedad debe indicar su gravedad.");
         }
-        if (fechaReporte == null) {
-            throw new ReglaDominioException("La novedad debe indicar la fecha de reporte.");
+        if (autor == null || autor.isBlank()) {
+            throw new ReglaDominioException("La novedad debe indicar su autor.");
+        }
+        if (momentoReporte == null) {
+            throw new ReglaDominioException("La novedad debe indicar el momento del reporte.");
         }
         this.id = id;
-        this.apartamento = apartamento;
-        this.descripcion = descripcion;
+        this.domo = domo;
+        this.tipo = tipo;
+        this.descripcion = descripcion.trim();
         this.gravedad = gravedad;
-        this.fechaReporte = fechaReporte;
+        this.autor = autor.trim();
+        this.momentoReporte = momentoReporte;
         this.atendida = false;
+    }
+
+    public void reclasificar(GravedadNovedad nuevaGravedad) {
+        if (nuevaGravedad == null) {
+            throw new ReglaDominioException("La gravedad es obligatoria.");
+        }
+        this.gravedad = nuevaGravedad;
     }
 
     public void marcarAtendida() {
@@ -53,8 +72,12 @@ public class Novedad {
         return id;
     }
 
-    public IdentificacionDomo getApartamento() {
-        return apartamento;
+    public IdentificacionDomo getDomo() {
+        return domo;
+    }
+
+    public TipoNovedad getTipo() {
+        return tipo;
     }
 
     public String getDescripcion() {
@@ -65,8 +88,12 @@ public class Novedad {
         return gravedad;
     }
 
-    public LocalDate getFechaReporte() {
-        return fechaReporte;
+    public String getAutor() {
+        return autor;
+    }
+
+    public LocalDateTime getMomentoReporte() {
+        return momentoReporte;
     }
 
     public boolean isAtendida() {

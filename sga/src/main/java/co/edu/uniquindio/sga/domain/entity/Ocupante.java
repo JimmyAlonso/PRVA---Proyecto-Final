@@ -11,13 +11,13 @@ import java.util.Objects;
 
 /**
  * Entidad interna del agregado Reserva: no existe fuera de una reserva y no tiene
- * repositorio propio.
+ * repositorio propio. Se identifica por su documento.
  */
 public class Ocupante {
 
     private final DocumentoIdentidad documento;
-    private String nombreCompleto;
-    private LocalDate fechaNacimiento;
+    private final String nombreCompleto;
+    private final LocalDate fechaNacimiento;
 
     public Ocupante(DocumentoIdentidad documento, String nombreCompleto, LocalDate fechaNacimiento) {
         if (documento == null) {
@@ -30,16 +30,19 @@ public class Ocupante {
             throw new ReglaDominioException("El ocupante debe tener fecha de nacimiento.");
         }
         this.documento = documento;
-        this.nombreCompleto = nombreCompleto;
+        this.nombreCompleto = nombreCompleto.trim();
         this.fechaNacimiento = fechaNacimiento;
     }
 
-    // La edad se calcula, nunca se almacena
+    // 3.2: la edad se calcula, nunca se almacena
     public int edadA(LocalDate fecha) {
         return Period.between(fechaNacimiento, fecha).getYears();
     }
 
-    /** RN-06: un ocupante es facturable si a la fecha de entrada alcanza el umbral configurado. */
+    /**
+     * RN-06: un ocupante es facturable si a la fecha de entrada alcanza el umbral configurado.
+     * Quien cumple años durante la estancia no cambia de condición a mitad de camino.
+     */
     public boolean esFacturableEn(Estancia estancia, UmbralEdadFacturable umbral) {
         return edadA(estancia.fechaEntrada()) >= umbral.anios();
     }

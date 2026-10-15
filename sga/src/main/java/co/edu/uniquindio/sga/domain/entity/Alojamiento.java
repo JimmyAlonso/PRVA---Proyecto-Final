@@ -1,69 +1,138 @@
 package co.edu.uniquindio.sga.domain.entity;
 
 import co.edu.uniquindio.sga.domain.exception.ReglaDominioException;
-import co.edu.uniquindio.sga.domain.valueobject.*;
-import lombok.Getter;
+import co.edu.uniquindio.sga.domain.valueobject.HorarioAlojamiento;
+import co.edu.uniquindio.sga.domain.valueobject.ParametrosOperacion;
+import co.edu.uniquindio.sga.domain.valueobject.ServicioAdicional;
 
 import java.math.BigDecimal;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-public class Alojamiento<ServicioAdicional, RecargoPersonaAdicional> {
-        private String nombre, descripcion, ciudad, direccion, normasConvivencia;
-        private BigDecimal latitud, longitud;
-        private LocalTime horaEntrada, horaSalida, horaLimiteNoShow;
-        @Getter
-        private UmbralEdadFacturable umbralEdad;
-        @Getter
-        private TiempoPreparacion tiempoPreparacion;
-        @Getter
-        private PlazoConfirmacion plazoConfirmacion;
-        private Porcentaje anticipo;                 // 0 = no se exige (L-11)
-        @Getter
-        private Deposito deposito;
-        @Getter
-        private RecargoPersonaAdicional recargo;
-        @Getter
-        private List<ServicioAdicional> servicios = List.of();
+/**
+ * El alojamiento (F-13: el sistema administra uno solo): JiyJu Glamping, Salento.
+ * Reúne los datos de 7.3 y los parámetros de la sección 6.
+ *
+ * <p>Corrección: antes era {@code Alojamiento<ServicioAdicional, RecargoPersonaAdicional>},
+ * es decir, los nombres de clases se habían declarado como parámetros de tipo genérico, y
+ * además usaba Lombok dentro del dominio. Ahora no tiene anotaciones ni genéricos.
+ */
+public class Alojamiento {
 
-        public Alojamiento(String nombre, String descripcion, String ciudad, String direccion,
-                           BigDecimal latitud, BigDecimal longitud,
-                           LocalTime horaEntrada, LocalTime horaSalida, String normasConvivencia,
-                           UmbralEdadFacturable umbralEdad, TiempoPreparacion tiempoPreparacion,
-                           PlazoConfirmacion plazoConfirmacion, LocalTime horaLimiteNoShow,
-                           Porcentaje anticipo, Deposito deposito, RecargoPersonaAdicional recargo) {
-            if (nombre == null || nombre.isBlank()) throw new ReglaDominioException("El alojamiento debe tener nombre.");
-            if (ciudad == null || ciudad.isBlank()) throw new ReglaDominioException("El alojamiento debe indicar la ciudad.");
-            if (latitud == null || longitud == null) throw new ReglaDominioException("Falta la ubicación exacta.");
-            if (horaEntrada == null || horaSalida == null) throw new ReglaDominioException("Faltan hora de entrada y de salida.");
-            if (umbralEdad == null || tiempoPreparacion == null || plazoConfirmacion == null
-                    || horaLimiteNoShow == null || anticipo == null || deposito == null || recargo == null)
-                throw new ReglaDominioException("Faltan parámetros de configuración del alojamiento.");
-            this.nombre = nombre; this.descripcion = descripcion; this.ciudad = ciudad; this.direccion = direccion;
-            this.latitud = latitud; this.longitud = longitud;
-            this.horaEntrada = horaEntrada; this.horaSalida = horaSalida; this.normasConvivencia = normasConvivencia;
-            this.umbralEdad = umbralEdad; this.tiempoPreparacion = tiempoPreparacion;
-            this.plazoConfirmacion = plazoConfirmacion; this.horaLimiteNoShow = horaLimiteNoShow;
-            this.anticipo = anticipo; this.deposito = deposito; this.recargo = recargo;
+    private final String nombre;
+    private String descripcion;
+    private final String ciudad;
+    private String direccion;
+    private BigDecimal latitud;
+    private BigDecimal longitud;
+    private HorarioAlojamiento horario;
+    private String normasConvivencia;
+    private ParametrosOperacion parametros;
+    private boolean aceptaMascotas;
+    private List<ServicioAdicional> servicios = List.of();
+
+    public Alojamiento(String nombre, String descripcion, String ciudad, String direccion,
+                       BigDecimal latitud, BigDecimal longitud, HorarioAlojamiento horario,
+                       String normasConvivencia, ParametrosOperacion parametros, boolean aceptaMascotas) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new ReglaDominioException("El alojamiento debe tener nombre.");
         }
-
-        public void agregarServicio(ServicioAdicional servicio) {
-            if (servicio == null) throw new ReglaDominioException("El servicio adicional es obligatorio.");
-            List<ServicioAdicional> nuevos = new ArrayList<>(servicios);
-            nuevos.add(servicio);
-            this.servicios = List.copyOf(nuevos);
+        if (ciudad == null || ciudad.isBlank()) {
+            throw new ReglaDominioException("El alojamiento debe indicar la ciudad.");
         }
+        if (latitud == null || longitud == null) {
+            throw new ReglaDominioException("Falta la ubicación exacta (latitud y longitud).");
+        }
+        if (horario == null) {
+            throw new ReglaDominioException("Faltan hora de entrada y de salida.");
+        }
+        if (parametros == null) {
+            throw new ReglaDominioException("Faltan los parámetros de operación del alojamiento.");
+        }
+        if (!parametros.horaLimiteNoShow().hora().isAfter(horario.horaEntrada())) {
+            throw new ReglaDominioException("La hora límite de no-show debe ser posterior a la hora de entrada.");
+        }
+        this.nombre = nombre.trim();
+        this.descripcion = descripcion;
+        this.ciudad = ciudad.trim();
+        this.direccion = direccion;
+        this.latitud = latitud;
+        this.longitud = longitud;
+        this.horario = horario;
+        this.normasConvivencia = normasConvivencia;
+        this.parametros = parametros;
+        this.aceptaMascotas = aceptaMascotas;
+    }
 
-        public boolean exigeAnticipo() { return anticipo.valor().signum() > 0; }
-        public Dinero anticipoSobre(Dinero valorReserva) { return anticipo.aplicarA(valorReserva); }
+    /** L-17: los servicios adicionales tienen código único dentro del alojamiento. */
+    public void agregarServicio(ServicioAdicional servicio) {
+        if (servicio == null) {
+            throw new ReglaDominioException("El servicio adicional es obligatorio.");
+        }
+        if (buscarServicio(servicio.codigo()).isPresent()) {
+            throw new ReglaDominioException("Ya existe un servicio con el código " + servicio.codigo() + ".");
+        }
+        List<ServicioAdicional> nuevos = new ArrayList<>(servicios);
+        nuevos.add(servicio);
+        this.servicios = List.copyOf(nuevos);
+    }
 
-        public String getNombre() { return nombre; }
-        public String getCiudad() { return ciudad; }
-        public LocalTime getHoraEntrada() { return horaEntrada; }
-        public LocalTime getHoraSalida() { return horaSalida; }
-        public LocalTime getHoraLimiteNoShow() { return horaLimiteNoShow; }
+    public Optional<ServicioAdicional> buscarServicio(String codigo) {
+        if (codigo == null) {
+            return Optional.empty();
+        }
+        return servicios.stream().filter(s -> s.codigo().equalsIgnoreCase(codigo.trim())).findFirst();
+    }
 
-    public Porcentaje getAnticipo() { return anticipo; }
+    public void actualizarParametros(ParametrosOperacion nuevos) {
+        if (nuevos == null) {
+            throw new ReglaDominioException("Los parámetros son obligatorios.");
+        }
+        this.parametros = nuevos;
+    }
 
+    public String getNombre() {
+        return nombre;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public String getCiudad() {
+        return ciudad;
+    }
+
+    public String getDireccion() {
+        return direccion;
+    }
+
+    public BigDecimal getLatitud() {
+        return latitud;
+    }
+
+    public BigDecimal getLongitud() {
+        return longitud;
+    }
+
+    public HorarioAlojamiento getHorario() {
+        return horario;
+    }
+
+    public String getNormasConvivencia() {
+        return normasConvivencia;
+    }
+
+    public ParametrosOperacion getParametros() {
+        return parametros;
+    }
+
+    public boolean isAceptaMascotas() {
+        return aceptaMascotas;
+    }
+
+    public List<ServicioAdicional> getServicios() {
+        return servicios;
+    }
 }

@@ -2,8 +2,13 @@ package co.edu.uniquindio.sga.domain.entity;
 
 import co.edu.uniquindio.sga.domain.exception.ReglaDominioException;
 import co.edu.uniquindio.sga.domain.valueobject.EstadoOperativo;
+import co.edu.uniquindio.sga.domain.valueobject.Fogata;
+import co.edu.uniquindio.sga.domain.valueobject.HoraEstimadaLlegada;
+import co.edu.uniquindio.sga.domain.valueobject.HorarioAlojamiento;
 import co.edu.uniquindio.sga.domain.valueobject.IdTemporada;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
+import co.edu.uniquindio.sga.domain.valueobject.Jacuzzi;
+import co.edu.uniquindio.sga.domain.valueobject.Malla;
 import co.edu.uniquindio.sga.domain.valueobject.Tarifa;
 
 import java.util.ArrayList;
@@ -12,43 +17,109 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Raíz del agregado Apartamento.
+ * Raíz del agregado Domo: la unidad vendible completa de JiyJu Glamping (F-01).
+ *
+ * <p>Jacuzzi, Malla y Fogata son objetos de valor del glosario propio: describen la dotación
+ * del domo y alimentan reglas propias (L-21), pero no tienen identidad.
  */
 public class Domo {
 
     private final IdentificacionDomo identificacion;
     private String nombre;
+    private String descripcion;
     private int dormitorios;
     private int capacidad;
+    private List<String> caracteristicas = List.of();
+    private Jacuzzi jacuzzi;
+    private Malla malla;
+    private Fogata fogata;
     private EstadoOperativo estadoOperativo;
     private boolean activo;
-    // RN de oro #9: colección interna siempre de solo lectura; toda modificación reemplaza la referencia
+    // Colección interna siempre de solo lectura; toda modificación reemplaza la referencia
     private List<Tarifa> tarifas = List.of();
 
     public Domo(IdentificacionDomo identificacion, String nombre, int dormitorios, int capacidad) {
         if (identificacion == null) {
-            throw new ReglaDominioException("El apartamento debe tener una identificación.");
+            throw new ReglaDominioException("El domo debe tener una identificación.");
         }
         if (nombre == null || nombre.isBlank()) {
-            throw new ReglaDominioException("El apartamento debe tener un nombre.");
+            throw new ReglaDominioException("El domo debe tener un nombre.");
         }
         if (dormitorios < 1) {
-            throw new ReglaDominioException("El apartamento debe tener al menos un dormitorio.");
+            throw new ReglaDominioException("El domo debe tener al menos un dormitorio.");
         }
         if (capacidad < 1) {
-            throw new ReglaDominioException("El apartamento debe tener capacidad para al menos un ocupante.");
+            throw new ReglaDominioException("El domo debe tener capacidad para al menos un ocupante.");
         }
         this.identificacion = identificacion;
-        this.nombre = nombre;
+        this.nombre = nombre.trim();
         this.dormitorios = dormitorios;
         this.capacidad = capacidad;
         this.estadoOperativo = EstadoOperativo.PREPARADO;
         this.activo = true;
     }
 
+    // ---------------------------------------------------------------- dotación (L-06)
+
+    public void describir(String descripcion, List<String> caracteristicas) {
+        this.descripcion = descripcion;
+        this.caracteristicas = caracteristicas == null ? List.of() : List.copyOf(caracteristicas);
+    }
+
+    public void equiparJacuzzi(Jacuzzi jacuzzi) {
+        this.jacuzzi = jacuzzi;
+    }
+
+    public void equiparMalla(Malla malla) {
+        this.malla = malla;
+    }
+
+    public void equiparFogata(Fogata fogata) {
+        this.fogata = fogata;
+    }
+
+    public boolean tieneJacuzzi() {
+        return jacuzzi != null;
+    }
+
+    /**
+     * L-21: para confirmar una reserva sobre un domo con Jacuzzi, la hora estimada de llegada
+     * debe dejar el tiempo de precalentamiento respecto de la hora oficial de entrada.
+     */
+    public void verificarAlistamientoJacuzzi(HoraEstimadaLlegada llegada, HorarioAlojamiento horario) {
+        if (jacuzzi == null || llegada == null) {
+            return;
+        }
+        if (!jacuzzi.alcanzaAlistamiento(llegada, horario)) {
+            throw new ReglaDominioException(
+                    "L-21: el domo " + identificacion.valor() + " tiene Jacuzzi y requiere "
+                            + jacuzzi.horasPrecalentamiento() + " horas de precalentamiento. "
+                            + "La hora estimada de llegada debe ser a partir de las "
+                            + jacuzzi.llegadaMasTempranaAdmitida(horario) + ".");
+        }
+    }
+
+    // ---------------------------------------------------------------- reglas de venta
+
     /** RN-02: la capacidad es un tope rígido, sin excepciones. Todos los ocupantes cuentan. */
     public boolean admite(int totalOcupantes) {
         return totalOcupantes <= capacidad;
+    }
+
+    /** 7.4: todo domo activo debe tener tarifa en todas las temporadas. */
+    public boolean tieneTarifasCompletas(List<Temporada> temporadas) {
+        return temporadas.stream().allMatch(temporada -> tarifaEn(temporada.getId()).isPresent());
+    }
+
+    /** 7.5 condición 3: domo activo y con tarifas completas. */
+    public void verificarQueAceptaReservas(List<Temporada> temporadas) {
+        if (!activo) {
+            throw new ReglaDominioException("El domo " + identificacion.valor() + " no está activo y no admite reservas.");
+        }
+        if (!tieneTarifasCompletas(temporadas)) {
+            throw new ReglaDominioException("El domo " + identificacion.valor()
+                    + " no tiene tarifa definida en todas las temporadas.");
+        }
     }
 
     /** RN-11: solo puede recibir un grupo si está activo y en estado operativo PREPARADO. */
@@ -56,7 +127,7 @@ public class Domo {
         return activo && estadoOperativo.permiteRegistro();
     }
 
-    /** RN-05: tarifa vigente del apartamento para una temporada dada. */
+    /** RN-05: tarifa vigente del domo para una temporada dada. */
     public Optional<Tarifa> tarifaEn(IdTemporada temporada) {
         return tarifas.stream()
                 .filter(tarifa -> tarifa.temporada().equals(temporada))
@@ -75,53 +146,70 @@ public class Domo {
         this.tarifas = List.copyOf(actualizadas);
     }
 
-    // F-09: solo se ocupa un apartamento que está PREPARADO
+    // ---------------------------------------------------------------- estado operativo (7.6)
+
+    // PREPARADO → OCUPADO (registro)
     public void marcarOcupado() {
         if (estadoOperativo != EstadoOperativo.PREPARADO) {
-            throw new ReglaDominioException("Solo se puede ocupar un apartamento que está PREPARADO.");
+            throw new ReglaDominioException("Solo se puede ocupar un domo que está PREPARADO.");
         }
         estadoOperativo = EstadoOperativo.OCUPADO;
     }
 
-    // F-09: tras la salida del grupo, el apartamento OCUPADO queda pendiente de preparación
+    // OCUPADO → PENDIENTE_PREPARACION (salida)
     public void marcarPendientePreparacion() {
         if (estadoOperativo != EstadoOperativo.OCUPADO) {
-            throw new ReglaDominioException(
-                    "Solo se puede marcar pendiente de preparación un apartamento OCUPADO.");
+            throw new ReglaDominioException("Solo se puede marcar pendiente de preparación un domo OCUPADO.");
         }
         estadoOperativo = EstadoOperativo.PENDIENTE_PREPARACION;
     }
 
-    // F-09: la preparación solo inicia si el apartamento estaba pendiente de ella
-    public void marcarEnPreparacion() {
+    // PENDIENTE_PREPARACION → EN_PREPARACION (personal de servicio)
+    public void iniciarPreparacion() {
         if (estadoOperativo != EstadoOperativo.PENDIENTE_PREPARACION) {
-            throw new ReglaDominioException(
-                    "Solo se puede iniciar la preparación de un apartamento PENDIENTE_PREPARACION.");
+            throw new ReglaDominioException("Solo se puede iniciar la preparación de un domo PENDIENTE_PREPARACION.");
         }
         estadoOperativo = EstadoOperativo.EN_PREPARACION;
     }
 
-    // F-09: queda preparado al terminar la preparación, o al volver de estar fuera de servicio
+    // EN_PREPARACION → PREPARADO (servicio) o FUERA_DE_SERVICIO → PREPARADO (administrador)
     public void marcarPreparado() {
         if (estadoOperativo != EstadoOperativo.EN_PREPARACION && estadoOperativo != EstadoOperativo.FUERA_DE_SERVICIO) {
-            throw new ReglaDominioException(
-                    "Solo se puede preparar un apartamento que está EN_PREPARACION o FUERA_DE_SERVICIO.");
+            throw new ReglaDominioException("Solo se puede dejar PREPARADO un domo EN_PREPARACION o FUERA_DE_SERVICIO.");
         }
         estadoOperativo = EstadoOperativo.PREPARADO;
     }
 
-    // F-09: se puede declarar fuera de servicio desde cualquier estado, salvo que ya lo esté
+    /**
+     * 7.6: FUERA_DE_SERVICIO desde cualquier estado NO ocupado, solo por administrador.
+     * Corrección: antes se permitía declarar fuera de servicio un domo OCUPADO.
+     */
     public void declararFueraDeServicio() {
+        if (estadoOperativo == EstadoOperativo.OCUPADO) {
+            throw new ReglaDominioException("No se puede declarar fuera de servicio un domo OCUPADO.");
+        }
         if (estadoOperativo == EstadoOperativo.FUERA_DE_SERVICIO) {
-            throw new ReglaDominioException("El apartamento ya está fuera de servicio.");
+            throw new ReglaDominioException("El domo ya está fuera de servicio.");
         }
         estadoOperativo = EstadoOperativo.FUERA_DE_SERVICIO;
     }
 
-    // La eliminación de apartamentos es lógica, nunca física
+    // ---------------------------------------------------------------- ciclo de vida
+
+    /** 7.3: la eliminación es lógica. Quien la invoca verifica que no tenga reservas activas ni futuras. */
     public void desactivar() {
         activo = false;
     }
+
+    /** 7.4: el sistema impide activar un domo sin tarifas completas. */
+    public void activar(List<Temporada> temporadas) {
+        if (!tieneTarifasCompletas(temporadas)) {
+            throw new ReglaDominioException("No se puede activar un domo sin tarifas en todas las temporadas.");
+        }
+        activo = true;
+    }
+
+    // ---------------------------------------------------------------- getters
 
     public IdentificacionDomo getIdentificacion() {
         return identificacion;
@@ -131,14 +219,33 @@ public class Domo {
         return nombre;
     }
 
+    public String getDescripcion() {
+        return descripcion;
+    }
+
     public int getDormitorios() {
         return dormitorios;
     }
 
-    // Cambiar la capacidad no afecta las reservas ya creadas: su valor y ocupantes quedaron
-    // congelados al crearlas (RN-22) y no vuelven a consultar este campo.
+    // Cambiar la capacidad no afecta las reservas ya creadas (RN-22): no vuelven a leer este campo.
     public int getCapacidad() {
         return capacidad;
+    }
+
+    public List<String> getCaracteristicas() {
+        return caracteristicas;
+    }
+
+    public Optional<Jacuzzi> getJacuzzi() {
+        return Optional.ofNullable(jacuzzi);
+    }
+
+    public Optional<Malla> getMalla() {
+        return Optional.ofNullable(malla);
+    }
+
+    public Optional<Fogata> getFogata() {
+        return Optional.ofNullable(fogata);
     }
 
     public EstadoOperativo getEstadoOperativo() {
