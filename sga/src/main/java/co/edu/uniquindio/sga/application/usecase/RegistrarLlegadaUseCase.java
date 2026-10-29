@@ -8,15 +8,18 @@ import co.edu.uniquindio.sga.domain.repository.FolioRepository;
 import co.edu.uniquindio.sga.domain.repository.ReservaRepository;
 import co.edu.uniquindio.sga.domain.service.EntregaDomoService;
 import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
 /**
  * Check-in: dos agregados cambian (Reserva → EN_CURSO, Domo → OCUPADO). La regla que los
  * relaciona (RN-10, RN-11, L-22) la coordina EntregaDomoService; el caso de uso solo trae los
- * agregados y los guarda. Que ambos queden guardados o ninguno lo resuelve @Transactional
- * cuando llegue la persistencia JPA (Guía 09).
+ * agregados y los guarda. @Transactional garantiza que ambos queden guardados o ninguno.
  */
+@Service
+@Transactional
 public class RegistrarLlegadaUseCase {
 
     private final ReservaRepository reservaRepository;

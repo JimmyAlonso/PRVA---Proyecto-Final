@@ -9,11 +9,15 @@ import co.edu.uniquindio.sga.domain.service.CotizadorEstanciaService;
 import co.edu.uniquindio.sga.domain.valueobject.Cotizacion;
 import co.edu.uniquindio.sga.domain.valueobject.Estancia;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
 
 /** 7.1 Huésped: cotizar una estancia antes de reservar, con el desglose noche por noche (7.4). */
+@Service
+@Transactional(readOnly = true)
 public class CotizarEstanciaUseCase {
 
     private final DomoRepository domoRepository;

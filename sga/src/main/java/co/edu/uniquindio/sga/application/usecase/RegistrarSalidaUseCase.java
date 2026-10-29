@@ -9,7 +9,11 @@ import co.edu.uniquindio.sga.domain.repository.ReservaRepository;
 import co.edu.uniquindio.sga.domain.service.LiquidacionSalidaService;
 import co.edu.uniquindio.sga.domain.valueobject.AutorizacionCierre;
 import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Service
+@Transactional
 public class RegistrarSalidaUseCase {
 
     private final ReservaRepository reservaRepository;

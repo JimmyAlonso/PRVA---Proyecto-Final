@@ -4,11 +4,15 @@ import co.edu.uniquindio.sga.domain.entity.Reserva;
 import co.edu.uniquindio.sga.domain.repository.CriteriosBusquedaReserva;
 import co.edu.uniquindio.sga.domain.repository.ReservaRepository;
 import co.edu.uniquindio.sga.domain.valueobject.EstadoReserva;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
 
 /** 7.6: llegadas y salidas previstas para un día (también insumo del resumen IA de la ficha). */
+@Service
+@Transactional(readOnly = true)
 public class ConsultarMovimientosDelDiaUseCase {
 
     public record MovimientosDelDia(LocalDate fecha, List<Reserva> llegadas, List<Reserva> salidas) {

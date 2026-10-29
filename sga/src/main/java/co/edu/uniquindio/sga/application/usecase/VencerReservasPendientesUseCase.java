@@ -8,6 +8,8 @@ import co.edu.uniquindio.sga.domain.repository.ReservaRepository;
 import co.edu.uniquindio.sga.domain.valueobject.Dinero;
 import co.edu.uniquindio.sga.domain.valueobject.EstadoReserva;
 import co.edu.uniquindio.sga.domain.valueobject.PlazoConfirmacion;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,6 +20,8 @@ import java.util.List;
  * programada de la infraestructura. El vencimiento no es una cancelación del huésped: no
  * aplica retención.
  */
+@Service
+@Transactional
 public class VencerReservasPendientesUseCase {
 
     private final ReservaRepository reservaRepository;

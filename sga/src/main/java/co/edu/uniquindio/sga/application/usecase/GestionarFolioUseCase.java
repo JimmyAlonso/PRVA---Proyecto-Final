@@ -1,9 +1,9 @@
 package co.edu.uniquindio.sga.application.usecase;
 
 import co.edu.uniquindio.sga.application.exception.ServicioAdicionalNoEncontradoException;
-import co.edu.uniquindio.sga.domain.entity.Alojamiento;
 import co.edu.uniquindio.sga.domain.entity.Folio;
 import co.edu.uniquindio.sga.domain.entity.Pago;
+import co.edu.uniquindio.sga.domain.repository.AlojamientoRepository;
 import co.edu.uniquindio.sga.domain.repository.FolioRepository;
 import co.edu.uniquindio.sga.domain.valueobject.Cargo;
 import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
@@ -12,6 +12,8 @@ import co.edu.uniquindio.sga.domain.valueobject.Dinero;
 import co.edu.uniquindio.sga.domain.valueobject.IdPago;
 import co.edu.uniquindio.sga.domain.valueobject.MedioPago;
 import co.edu.uniquindio.sga.domain.valueobject.ServicioAdicional;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -21,14 +23,16 @@ import java.util.UUID;
  * RN-15), registrar servicios adicionales (L-17) y el depósito exigido para el check-in (L-22).
  * Ningún movimiento se edita ni se borra (RN-16).
  */
+@Service
+@Transactional
 public class GestionarFolioUseCase {
 
     private final FolioRepository folioRepository;
-    private final Alojamiento alojamiento;
+    private final AlojamientoRepository alojamientoRepository;
 
-    public GestionarFolioUseCase(FolioRepository folioRepository, Alojamiento alojamiento) {
+    public GestionarFolioUseCase(FolioRepository folioRepository, AlojamientoRepository alojamientoRepository) {
         this.folioRepository = folioRepository;
-        this.alojamiento = alojamiento;
+        this.alojamientoRepository = alojamientoRepository;
     }
 
     public Folio consultar(CodigoReserva codigo) {
@@ -43,7 +47,7 @@ public class GestionarFolioUseCase {
     }
 
     public Folio registrarServicio(CodigoReserva codigo, String codigoServicio, int cantidad, LocalDate fecha) {
-        ServicioAdicional servicio = alojamiento.buscarServicio(codigoServicio)
+        ServicioAdicional servicio = alojamientoRepository.obtener().buscarServicio(codigoServicio)
                 .orElseThrow(() -> new ServicioAdicionalNoEncontradoException(codigoServicio));
         Folio folio = Buscar.folio(folioRepository, codigo);
         folio.registrarCargo(new Cargo(ConceptoCargo.SERVICIO, servicio.cargoPara(cantidad), fecha,
@@ -55,7 +59,7 @@ public class GestionarFolioUseCase {
     /** L-22: el monto del depósito es configuración del alojamiento. */
     public Folio registrarDeposito(CodigoReserva codigo, LocalDate fecha) {
         Folio folio = Buscar.folio(folioRepository, codigo);
-        folio.registrarDeposito(alojamiento.getParametros().deposito(), fecha);
+        folio.registrarDeposito(alojamientoRepository.obtener().getParametros().deposito(), fecha);
         folioRepository.guardar(folio);
         return folio;
     }

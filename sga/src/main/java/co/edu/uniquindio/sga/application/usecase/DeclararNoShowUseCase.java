@@ -10,10 +10,14 @@ import co.edu.uniquindio.sga.domain.service.RetencionService;
 import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
 import co.edu.uniquindio.sga.domain.valueobject.Dinero;
 import co.edu.uniquindio.sga.domain.valueobject.HoraLimiteNoShow;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 // Disparador distinto de la cancelación: no se fusiona con CancelarReservaUseCase (Guía 06, 3.3)
+@Service
+@Transactional
 public class DeclararNoShowUseCase {
 
     private final ReservaRepository reservaRepository;

@@ -10,6 +10,8 @@ import co.edu.uniquindio.sga.domain.repository.ReservaRepository;
 import co.edu.uniquindio.sga.domain.service.RetencionService;
 import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
 import co.edu.uniquindio.sga.domain.valueobject.Dinero;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -18,6 +20,8 @@ import java.time.LocalDateTime;
  * con la política congelada (RN-13) y queda como penalidad en el folio; lo pagado de más
  * queda como saldo a favor. La disponibilidad se libera de inmediato (RN-12).
  */
+@Service
+@Transactional
 public class CancelarReservaUseCase {
 
     private final ReservaRepository reservaRepository;

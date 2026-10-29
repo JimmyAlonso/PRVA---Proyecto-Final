@@ -22,6 +22,8 @@ import co.edu.uniquindio.sga.domain.valueobject.GravedadNovedad;
 import co.edu.uniquindio.sga.domain.valueobject.IdNovedad;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificadorExterno;
 import co.edu.uniquindio.sga.domain.valueobject.TipoNovedad;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -32,6 +34,8 @@ import java.util.UUID;
  * aceptada, reserva en conflicto rechazada y registrada (RN-18), y mensaje repetido que no
  * duplica la reserva (RN-19).
  */
+@Service
+@Transactional
 public class CanalExternoUseCase {
 
     private final ConciliacionCanalExternoService conciliacionService;

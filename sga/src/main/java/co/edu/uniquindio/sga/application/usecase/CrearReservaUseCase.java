@@ -24,6 +24,8 @@ import co.edu.uniquindio.sga.domain.valueobject.Estancia;
 import co.edu.uniquindio.sga.domain.valueobject.HoraEstimadaLlegada;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
 import co.edu.uniquindio.sga.domain.valueobject.UmbralEdadFacturable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,6 +38,8 @@ import java.util.List;
  * 6) tiempo de preparación (RN-20). Luego congela valor y política (RN-22), abre el folio
  * (F-08) y notifica al titular. La reserva nace PENDIENTE.
  */
+@Service
+@Transactional
 public class CrearReservaUseCase {
 
     private final ReservaRepository reservaRepository;

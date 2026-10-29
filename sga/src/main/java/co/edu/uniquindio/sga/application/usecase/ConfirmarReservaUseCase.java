@@ -10,11 +10,15 @@ import co.edu.uniquindio.sga.domain.repository.ReservaRepository;
 import co.edu.uniquindio.sga.domain.service.ConfirmacionReservaService;
 import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
 import co.edu.uniquindio.sga.domain.valueobject.HoraEstimadaLlegada;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * PENDIENTE → CONFIRMADA: RN-08, RN-09, anticipo del 50 % (L-11) y alistamiento del
  * Jacuzzi (L-21). Si llega la hora estimada de llegada, se registra antes de confirmar.
  */
+@Service
+@Transactional
 public class ConfirmarReservaUseCase {
 
     private final ReservaRepository reservaRepository;

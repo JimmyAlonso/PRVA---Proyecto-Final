@@ -4,82 +4,93 @@ import co.edu.uniquindio.sga.application.dto.Pagina;
 import co.edu.uniquindio.sga.domain.entity.Bloqueo;
 import co.edu.uniquindio.sga.domain.entity.Domo;
 import co.edu.uniquindio.sga.domain.entity.Novedad;
-import co.edu.uniquindio.sga.domain.entity.Reserva;
-import co.edu.uniquindio.sga.domain.exception.ReglaDominioException;
 import co.edu.uniquindio.sga.domain.repository.BloqueoRepository;
 import co.edu.uniquindio.sga.domain.repository.DomoRepository;
 import co.edu.uniquindio.sga.domain.repository.NovedadRepository;
-import co.edu.uniquindio.sga.domain.repository.ReservaRepository;
+import co.edu.uniquindio.sga.domain.service.CalendarioOcupacionService;
 import co.edu.uniquindio.sga.domain.valueobject.EstadoOperativo;
 import co.edu.uniquindio.sga.domain.valueobject.GravedadNovedad;
-import co.edu.uniquindio.sga.domain.valueobject.IdBloqueo;
 import co.edu.uniquindio.sga.domain.valueobject.IdNovedad;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
-import co.edu.uniquindio.sga.domain.valueobject.MotivoBloqueo;
+import co.edu.uniquindio.sga.domain.valueobject.NocheCalendario;
 import co.edu.uniquindio.sga.domain.valueobject.Periodo;
 import co.edu.uniquindio.sga.domain.valueobject.TipoNovedad;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * 7.3 y 7.6: consultar domos, cambiar su estado operativo, registrar novedades y bloqueos.
- * La autorización por rol (el personal de servicio no declara FUERA_DE_SERVICIO ni bloquea)
- * pertenece a la seguridad (Corte 2); aquí se validan las reglas de negocio.
+ * Consulta del catálogo de domos y operación diaria (7.6) del personal de servicio y la
+ * recepción. Cada transición del estado operativo es un método de negocio propio: no existe un
+ * "cambiar estado" genérico, el agregado Domo decide si la transición es válida.
  */
+@Service
+@Transactional
 public class OperarDomoUseCase {
-
-    /** 7.6: transiciones de estado operativo que se solicitan explícitamente. */
-    public enum AccionEstadoOperativo {
-        INICIAR_PREPARACION,
-        MARCAR_PREPARADO,
-        DECLARAR_FUERA_DE_SERVICIO
-    }
 
     private final DomoRepository domoRepository;
     private final NovedadRepository novedadRepository;
     private final BloqueoRepository bloqueoRepository;
-    private final ReservaRepository reservaRepository;
+    private final CalendarioOcupacionService calendarioService;
 
     public OperarDomoUseCase(DomoRepository domoRepository, NovedadRepository novedadRepository,
-                             BloqueoRepository bloqueoRepository, ReservaRepository reservaRepository) {
+                             BloqueoRepository bloqueoRepository, CalendarioOcupacionService calendarioService) {
         this.domoRepository = domoRepository;
         this.novedadRepository = novedadRepository;
         this.bloqueoRepository = bloqueoRepository;
-        this.reservaRepository = reservaRepository;
+        this.calendarioService = calendarioService;
     }
 
+    // ------------------------------------------------------------------ catálogo
+
+    /** 7.3: los listados ignoran los domos eliminados e inactivos. */
+    @Transactional(readOnly = true)
     public Pagina<Domo> listar(int pagina) {
         return Pagina.de(domoRepository.listarActivos(), pagina);
     }
 
+    @Transactional(readOnly = true)
     public Domo consultar(IdentificacionDomo id) {
         return Buscar.domo(domoRepository, id);
     }
 
-    /** 7.1 Personal de servicio: domos pendientes de preparación. */
-    public List<Domo> pendientesDePreparacion() {
-        return domoRepository.listarActivos().stream()
-                .filter(d -> d.getEstadoOperativo() == EstadoOperativo.PENDIENTE_PREPARACION
-                        || d.getEstadoOperativo() == EstadoOperativo.EN_PREPARACION)
-                .toList();
+    /** 7.5: calendario de ocupación por domo y rango de fechas (noches incluidas en ambos extremos). */
+    @Transactional(readOnly = true)
+    public List<NocheCalendario> calendario(IdentificacionDomo id, Periodo noches) {
+        return calendarioService.calendario(Buscar.domo(domoRepository, id), noches);
     }
 
-    public Domo cambiarEstado(IdentificacionDomo id, AccionEstadoOperativo accion) {
-        if (accion == null) {
-            throw new ReglaDominioException("Se debe indicar la acción sobre el estado operativo.");
-        }
+    // ------------------------------------------------------------------ estado operativo (7.6)
+
+    /** 7.1 Personal de servicio: domos pendientes de preparación o en preparación. */
+    @Transactional(readOnly = true)
+    public Pagina<Domo> pendientesDePreparacion(int pagina) {
+        return Pagina.de(domoRepository.listarNoEliminados().stream()
+                .filter(d -> d.getEstadoOperativo() == EstadoOperativo.PENDIENTE_PREPARACION
+                        || d.getEstadoOperativo() == EstadoOperativo.EN_PREPARACION)
+                .toList(), pagina);
+    }
+
+    /** PENDIENTE_PREPARACION → EN_PREPARACION. */
+    public Domo iniciarPreparacion(IdentificacionDomo id) {
         Domo domo = Buscar.domo(domoRepository, id);
-        switch (accion) {
-            case INICIAR_PREPARACION -> domo.iniciarPreparacion();
-            case MARCAR_PREPARADO -> domo.marcarPreparado();
-            case DECLARAR_FUERA_DE_SERVICIO -> domo.declararFueraDeServicio();
-        }
+        domo.iniciarPreparacion();
         domoRepository.guardar(domo);
         return domo;
     }
+
+    /** EN_PREPARACION → PREPARADO. */
+    public Domo marcarPreparado(IdentificacionDomo id) {
+        Domo domo = Buscar.domo(domoRepository, id);
+        domo.marcarPreparado();
+        domoRepository.guardar(domo);
+        return domo;
+    }
+
+    // ------------------------------------------------------------------ novedades (7.6)
 
     public Novedad registrarNovedad(IdentificacionDomo id, TipoNovedad tipo, String descripcion,
                                     GravedadNovedad gravedad, String autor, LocalDateTime momento) {
@@ -90,33 +101,23 @@ public class OperarDomoUseCase {
         return novedad;
     }
 
+    @Transactional(readOnly = true)
     public Pagina<Novedad> historialNovedades(IdentificacionDomo id, int pagina) {
         Buscar.domo(domoRepository, id);
         return Pagina.de(novedadRepository.listarPorDomo(id), pagina);
     }
 
-    public List<Novedad> conflictosDeCanal() {
-        return novedadRepository.listarPorTipo(TipoNovedad.CONFLICTO_CANAL);
+    /** 7.8: conflictos de canal registrados para revisión del administrador (RN-18). */
+    @Transactional(readOnly = true)
+    public Pagina<Novedad> conflictosDeCanal(int pagina) {
+        return Pagina.de(novedadRepository.listarPorTipo(TipoNovedad.CONFLICTO_CANAL), pagina);
     }
 
-    /** 7.3: no puede registrarse un bloqueo sobre noches que ya tengan reservas activas. */
-    public Bloqueo registrarBloqueo(IdentificacionDomo id, LocalDate desde, LocalDate hasta,
-                                    MotivoBloqueo motivo, String observacion) {
-        Buscar.domo(domoRepository, id);
-        Periodo periodo = new Periodo(desde, hasta);
-        boolean chocaConReserva = reservaRepository.buscarActivasPorDomo(id, periodo).stream()
-                .filter(Reserva::estaActiva)
-                .anyMatch(reserva -> reserva.getEstancia().nochesOcupadas().stream().anyMatch(periodo::contiene));
-        if (chocaConReserva) {
-            throw new ReglaDominioException("No se puede bloquear: el domo tiene reservas activas en esas noches.");
-        }
-        Bloqueo bloqueo = new Bloqueo(new IdBloqueo(UUID.randomUUID().toString()), id, periodo, motivo, observacion);
-        bloqueoRepository.guardar(bloqueo);
-        return bloqueo;
-    }
+    // ------------------------------------------------------------------ bloqueos (consulta)
 
-    public List<Bloqueo> bloqueos(IdentificacionDomo id) {
+    @Transactional(readOnly = true)
+    public Pagina<Bloqueo> bloqueos(IdentificacionDomo id, int pagina) {
         Buscar.domo(domoRepository, id);
-        return bloqueoRepository.listarPorDomo(id);
+        return Pagina.de(bloqueoRepository.listarPorDomo(id), pagina);
     }
 }

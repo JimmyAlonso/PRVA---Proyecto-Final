@@ -4,13 +4,15 @@ import co.edu.uniquindio.sga.application.dto.Pagina;
 import co.edu.uniquindio.sga.domain.entity.Domo;
 import co.edu.uniquindio.sga.domain.entity.Ocupante;
 import co.edu.uniquindio.sga.domain.entity.Temporada;
-import co.edu.uniquindio.sga.domain.service.CotizadorEstanciaService;
-import co.edu.uniquindio.sga.domain.service.DisponibilidadDomoService;
 import co.edu.uniquindio.sga.domain.repository.DomoRepository;
 import co.edu.uniquindio.sga.domain.repository.TemporadaRepository;
+import co.edu.uniquindio.sga.domain.service.CotizadorEstanciaService;
+import co.edu.uniquindio.sga.domain.service.DisponibilidadDomoService;
 import co.edu.uniquindio.sga.domain.valueobject.Cotizacion;
 import co.edu.uniquindio.sga.domain.valueobject.Dinero;
 import co.edu.uniquindio.sga.domain.valueobject.Estancia;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -22,6 +24,8 @@ import java.util.List;
  * filtros de capacidad, precio y características. Cada resultado trae su valor estimado.
  * También responde la consulta de disponibilidad del canal externo (10.3.1, operación 1).
  */
+@Service
+@Transactional(readOnly = true)
 public class BuscarDomosDisponiblesUseCase {
 
     public record Filtros(Integer capacidadMinima, Dinero precioMaximo, String caracteristica, Boolean conJacuzzi) {

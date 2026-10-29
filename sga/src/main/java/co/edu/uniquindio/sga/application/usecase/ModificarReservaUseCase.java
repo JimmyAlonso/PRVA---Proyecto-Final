@@ -17,7 +17,10 @@ import co.edu.uniquindio.sga.domain.valueobject.Dinero;
 import co.edu.uniquindio.sga.domain.valueobject.Estancia;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
 import co.edu.uniquindio.sga.domain.valueobject.UmbralEdadFacturable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,6 +30,8 @@ import java.util.List;
  * recalcula con las tarifas vigentes y registra la diferencia como ajuste en el folio. La
  * política congelada no cambia (RN-22).
  */
+@Service
+@Transactional
 public class ModificarReservaUseCase {
 
     private final ReservaRepository reservaRepository;
@@ -51,6 +56,17 @@ public class ModificarReservaUseCase {
     }
 
     /** Los parámetros null conservan el valor actual de la reserva. */
+    /**
+     * Modificación desde la API: las fechas que no llegan se conservan y, si llegan acompañantes,
+     * reemplazan a los actuales manteniendo al titular como ocupante (3.2).
+     */
+    public Reserva ejecutar(CodigoReserva codigo, IdentificacionDomo nuevoDomo, LocalDate nuevaEntrada,
+                            LocalDate nuevaSalida, List<Ocupante> nuevosAcompanantes, LocalDateTime momentoActual) {
+        Reserva reserva = Buscar.reserva(reservaRepository, codigo);
+        return ejecutar(codigo, nuevoDomo, reserva.estanciaCon(nuevaEntrada, nuevaSalida),
+                nuevosAcompanantes == null ? null : reserva.conAcompanantes(nuevosAcompanantes), momentoActual);
+    }
+
     public Reserva ejecutar(CodigoReserva codigo, IdentificacionDomo nuevoDomo, Estancia nuevaEstancia,
                             List<Ocupante> nuevosOcupantes, LocalDateTime momentoActual) {
         Reserva reserva = Buscar.reserva(reservaRepository, codigo);
