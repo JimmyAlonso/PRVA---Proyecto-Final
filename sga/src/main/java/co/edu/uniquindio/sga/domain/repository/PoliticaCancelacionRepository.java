@@ -4,6 +4,7 @@ import co.edu.uniquindio.sga.domain.entity.PoliticaCancelacion;
 import co.edu.uniquindio.sga.domain.valueobject.VersionPolitica;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface PoliticaCancelacionRepository {
@@ -13,6 +14,12 @@ public interface PoliticaCancelacionRepository {
 
     /** RN-13: la retención se calcula con la versión congelada en la reserva, no con la vigente hoy. */
     Optional<PoliticaCancelacion> obtenerPorVersion(VersionPolitica version);
+
+    /** F-07: la última versión publicada, de la que se deriva la siguiente. */
+    Optional<PoliticaCancelacion> obtenerUltima();
+
+    /** 7.4: historial completo de versiones, de la más reciente a la más antigua. */
+    List<PoliticaCancelacion> listarVersiones();
 
     /** 7.4: al actualizar la política se conserva la versión anterior. */
     void guardar(PoliticaCancelacion politica);

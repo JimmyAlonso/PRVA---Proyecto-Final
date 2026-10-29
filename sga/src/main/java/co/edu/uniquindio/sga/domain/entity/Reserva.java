@@ -18,6 +18,7 @@ import co.edu.uniquindio.sga.domain.valueobject.VersionPolitica;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -104,6 +105,41 @@ public class Reserva {
         // RN-22: el valor (con su desglose) y la política quedan congelados al crear la reserva
         return new Reserva(codigo, domo, estancia, canalOrigen, titular, List.copyOf(ocupantes),
                 cotizacion, politicaCongelada, momentoActual);
+    }
+
+    /**
+     * Rehidrata una reserva ya persistida (adaptador JPA). No repite las validaciones de
+     * creación: una reserva guardada ya las cumplió y puede estar en el pasado o en un estado
+     * terminal. Persistir no cambia el dominio: no hay setters ni constructor vacío.
+     */
+    public static Reserva reconstruir(CodigoReserva codigo,
+                                      IdentificacionDomo domo,
+                                      Estancia estancia,
+                                      EstadoReserva estado,
+                                      CanalOrigen canalOrigen,
+                                      IdentificadorExterno identificadorExterno,
+                                      TitularDeLaReserva titular,
+                                      List<Ocupante> ocupantes,
+                                      HoraEstimadaLlegada horaEstimadaLlegada,
+                                      Dinero valorCongelado,
+                                      List<DetalleNoche> desgloseCongelado,
+                                      VersionPolitica politicaCongelada,
+                                      LocalDateTime momentoCreacion,
+                                      String motivoCancelacion) {
+        if (codigo == null || domo == null || estancia == null || estado == null || canalOrigen == null
+                || titular == null || ocupantes == null || valorCongelado == null || politicaCongelada == null
+                || momentoCreacion == null) {
+            throw new ReglaDominioException("Los datos guardados de la reserva están incompletos.");
+        }
+        Reserva reserva = new Reserva(codigo, domo, estancia, canalOrigen, titular, List.copyOf(ocupantes),
+                new Cotizacion(desgloseCongelado), politicaCongelada, momentoCreacion);
+        // RN-22: se respeta el valor congelado tal como se guardó, no se recalcula desde el desglose
+        reserva.valorCongelado = valorCongelado;
+        reserva.estado = estado;
+        reserva.identificadorExterno = identificadorExterno;
+        reserva.horaEstimadaLlegada = horaEstimadaLlegada;
+        reserva.motivoCancelacion = motivoCancelacion;
+        return reserva;
     }
 
     /** Validaciones compartidas por la creación y la modificación (RN-14). */
@@ -257,6 +293,31 @@ public class Reserva {
         this.valorCongelado = nuevaCotizacion.total();
         this.desgloseCongelado = nuevaCotizacion.noches();
         return valorAnterior;
+    }
+
+    /**
+     * 3.2 y RN-14: en una modificación el titular sigue siendo ocupante. Recibe los acompañantes
+     * nuevos y devuelve la composición completa del grupo con el titular al inicio.
+     */
+    public List<Ocupante> conAcompanantes(List<Ocupante> acompanantes) {
+        List<Ocupante> grupo = new ArrayList<>();
+        ocupantes.stream()
+                .filter(ocupante -> ocupante.getDocumento().equals(titular.getDocumento()))
+                .findFirst()
+                .ifPresent(grupo::add);
+        if (acompanantes != null) {
+            acompanantes.stream().filter(ocupante -> !grupo.contains(ocupante)).forEach(grupo::add);
+        }
+        return List.copyOf(grupo);
+    }
+
+    /** RN-14: nueva estancia a partir de las fechas que cambian; la que no llega se conserva. */
+    public Estancia estanciaCon(LocalDate nuevaEntrada, LocalDate nuevaSalida) {
+        if (nuevaEntrada == null && nuevaSalida == null) {
+            return estancia;
+        }
+        return new Estancia(nuevaEntrada != null ? nuevaEntrada : estancia.fechaEntrada(),
+                nuevaSalida != null ? nuevaSalida : estancia.fechaSalida());
     }
 
     /** RN-19: la combinación canal + identificador externo es única. */

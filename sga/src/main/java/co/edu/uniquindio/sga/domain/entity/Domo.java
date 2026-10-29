@@ -9,8 +9,10 @@ import co.edu.uniquindio.sga.domain.valueobject.IdTemporada;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
 import co.edu.uniquindio.sga.domain.valueobject.Jacuzzi;
 import co.edu.uniquindio.sga.domain.valueobject.Malla;
+import co.edu.uniquindio.sga.domain.valueobject.RegistroTarifa;
 import co.edu.uniquindio.sga.domain.valueobject.Tarifa;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -35,13 +37,56 @@ public class Domo {
     private Fogata fogata;
     private EstadoOperativo estadoOperativo;
     private boolean activo;
-    // Colección interna siempre de solo lectura; toda modificación reemplaza la referencia
+    // 7.3: eliminación lógica. Un domo retirado de la venta no vuelve a activarse y los listados lo ignoran,
+    // pero las reservas históricas lo siguen referenciando.
+    private boolean eliminado;
+    // Colecciones internas siempre de solo lectura; toda modificación reemplaza la referencia
     private List<Tarifa> tarifas = List.of();
+    private List<RegistroTarifa> historialTarifas = List.of();
 
     public Domo(IdentificacionDomo identificacion, String nombre, int dormitorios, int capacidad) {
         if (identificacion == null) {
             throw new ReglaDominioException("El domo debe tener una identificación.");
         }
+        validarDatos(nombre, dormitorios, capacidad);
+        this.identificacion = identificacion;
+        this.nombre = nombre.trim();
+        this.dormitorios = dormitorios;
+        this.capacidad = capacidad;
+        this.estadoOperativo = EstadoOperativo.PREPARADO;
+        this.activo = true;
+        this.eliminado = false;
+    }
+
+    /**
+     * 7.3 y 7.4: un domo nuevo se registra inactivo; solo se activa cuando tiene tarifa en todas
+     * las temporadas (ver {@link #activar(List)}).
+     */
+    public static Domo registrar(IdentificacionDomo identificacion, String nombre, int dormitorios, int capacidad) {
+        Domo domo = new Domo(identificacion, nombre, dormitorios, capacidad);
+        domo.activo = false;
+        return domo;
+    }
+
+    /** Rehidrata un domo ya persistido (adaptador JPA), sin pasar por las reglas de creación. */
+    public static Domo reconstruir(IdentificacionDomo identificacion, String nombre, String descripcion,
+                                   int dormitorios, int capacidad, List<String> caracteristicas, Jacuzzi jacuzzi,
+                                   Malla malla, Fogata fogata, EstadoOperativo estadoOperativo, boolean activo,
+                                   boolean eliminado, List<Tarifa> tarifas, List<RegistroTarifa> historialTarifas) {
+        Domo domo = new Domo(identificacion, nombre, dormitorios, capacidad);
+        domo.describir(descripcion, caracteristicas);
+        domo.jacuzzi = jacuzzi;
+        domo.malla = malla;
+        domo.fogata = fogata;
+        domo.estadoOperativo = estadoOperativo == null ? EstadoOperativo.PREPARADO : estadoOperativo;
+        domo.activo = activo;
+        domo.eliminado = eliminado;
+        domo.tarifas = tarifas == null ? List.of() : List.copyOf(tarifas);
+        domo.historialTarifas = historialTarifas == null ? List.of() : List.copyOf(historialTarifas);
+        return domo;
+    }
+
+    private static void validarDatos(String nombre, int dormitorios, int capacidad) {
         if (nombre == null || nombre.isBlank()) {
             throw new ReglaDominioException("El domo debe tener un nombre.");
         }
@@ -51,12 +96,21 @@ public class Domo {
         if (capacidad < 1) {
             throw new ReglaDominioException("El domo debe tener capacidad para al menos un ocupante.");
         }
-        this.identificacion = identificacion;
+    }
+
+    /**
+     * 7.3: actualiza los atributos descriptivos. Cambiar la capacidad no afecta las reservas ya
+     * creadas, aunque queden por encima de la nueva capacidad: el sistema las advierte
+     * (InventarioDomoService.reservasQueSuperanCapacidad).
+     */
+    public void actualizarDatos(String nombre, String descripcion, int dormitorios, int capacidad,
+                                List<String> caracteristicas) {
+        verificarNoEliminado();
+        validarDatos(nombre, dormitorios, capacidad);
         this.nombre = nombre.trim();
         this.dormitorios = dormitorios;
         this.capacidad = capacidad;
-        this.estadoOperativo = EstadoOperativo.PREPARADO;
-        this.activo = true;
+        describir(descripcion, caracteristicas);
     }
 
     // ---------------------------------------------------------------- dotación (L-06)
@@ -146,6 +200,32 @@ public class Domo {
         this.tarifas = List.copyOf(actualizadas);
     }
 
+    /**
+     * 7.4: define o reemplaza la tarifa de una temporada. El valor anterior pasa al histórico;
+     * las reservas ya creadas no cambian porque congelaron su valor (RN-22).
+     */
+    public void establecerTarifa(Tarifa nueva, LocalDate fecha) {
+        if (nueva == null || fecha == null) {
+            throw new ReglaDominioException("La tarifa y la fecha del cambio son obligatorias.");
+        }
+        verificarNoEliminado();
+        Optional<Tarifa> anterior = tarifaEn(nueva.temporada());
+        if (anterior.isEmpty()) {
+            definirTarifa(nueva);
+            return;
+        }
+        if (anterior.get().equals(nueva)) {
+            return;
+        }
+        List<RegistroTarifa> historial = new ArrayList<>(historialTarifas);
+        historial.add(new RegistroTarifa(anterior.get().temporada(), anterior.get().valorPorOcupanteNoche(), fecha));
+        this.historialTarifas = List.copyOf(historial);
+        List<Tarifa> actualizadas = new ArrayList<>(tarifas);
+        actualizadas.remove(anterior.get());
+        actualizadas.add(nueva);
+        this.tarifas = List.copyOf(actualizadas);
+    }
+
     // ---------------------------------------------------------------- estado operativo (7.6)
 
     // PREPARADO → OCUPADO (registro)
@@ -172,10 +252,18 @@ public class Domo {
         estadoOperativo = EstadoOperativo.EN_PREPARACION;
     }
 
-    // EN_PREPARACION → PREPARADO (servicio) o FUERA_DE_SERVICIO → PREPARADO (administrador)
+    // EN_PREPARACION → PREPARADO (personal de servicio)
     public void marcarPreparado() {
-        if (estadoOperativo != EstadoOperativo.EN_PREPARACION && estadoOperativo != EstadoOperativo.FUERA_DE_SERVICIO) {
-            throw new ReglaDominioException("Solo se puede dejar PREPARADO un domo EN_PREPARACION o FUERA_DE_SERVICIO.");
+        if (estadoOperativo != EstadoOperativo.EN_PREPARACION) {
+            throw new ReglaDominioException("Solo se puede dejar PREPARADO un domo EN_PREPARACION.");
+        }
+        estadoOperativo = EstadoOperativo.PREPARADO;
+    }
+
+    // FUERA_DE_SERVICIO → PREPARADO (decisión administrativa, como la de sacarlo de servicio)
+    public void restablecerServicio() {
+        if (estadoOperativo != EstadoOperativo.FUERA_DE_SERVICIO) {
+            throw new ReglaDominioException("Solo se puede restablecer un domo FUERA_DE_SERVICIO.");
         }
         estadoOperativo = EstadoOperativo.PREPARADO;
     }
@@ -196,17 +284,34 @@ public class Domo {
 
     // ---------------------------------------------------------------- ciclo de vida
 
-    /** 7.3: la eliminación es lógica. Quien la invoca verifica que no tenga reservas activas ni futuras. */
+    /** Saca el domo de la venta sin eliminarlo (por ejemplo, mientras se completan sus tarifas). */
     public void desactivar() {
         activo = false;
     }
 
     /** 7.4: el sistema impide activar un domo sin tarifas completas. */
     public void activar(List<Temporada> temporadas) {
+        verificarNoEliminado();
         if (!tieneTarifasCompletas(temporadas)) {
             throw new ReglaDominioException("No se puede activar un domo sin tarifas en todas las temporadas.");
         }
         activo = true;
+    }
+
+    /**
+     * 7.3 y 12.4: retiro de la venta con eliminación lógica. La condición de no tener reservas
+     * activas ni futuras la verifica InventarioDomoService, porque este agregado no ve las reservas.
+     */
+    public void retirarDeVenta() {
+        verificarNoEliminado();
+        activo = false;
+        eliminado = true;
+    }
+
+    private void verificarNoEliminado() {
+        if (eliminado) {
+            throw new ReglaDominioException("El domo " + identificacion.valor() + " fue retirado de la venta.");
+        }
     }
 
     // ---------------------------------------------------------------- getters
@@ -256,8 +361,16 @@ public class Domo {
         return activo;
     }
 
+    public boolean isEliminado() {
+        return eliminado;
+    }
+
     public List<Tarifa> getTarifas() {
         return tarifas;
+    }
+
+    public List<RegistroTarifa> getHistorialTarifas() {
+        return historialTarifas;
     }
 
     @Override

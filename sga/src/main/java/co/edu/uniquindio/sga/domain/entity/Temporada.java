@@ -32,9 +32,20 @@ public class Temporada {
         if (nombre == null || nombre.isBlank()) {
             throw new ReglaDominioException("La temporada debe tener un nombre.");
         }
+        this.id = id;
+        this.esBase = esBase;
+        this.nombre = nombre.trim();
+        this.periodos = validarPeriodos(nombre, periodos, esBase);
+    }
+
+    private static List<Periodo> validarPeriodos(String nombre, List<Periodo> periodos, boolean esBase) {
         List<Periodo> rangos = periodos == null ? List.of() : List.copyOf(periodos);
         if (!esBase && rangos.isEmpty()) {
             throw new ReglaDominioException("Una temporada que no es la base debe indicar al menos un rango de fechas.");
+        }
+        // 7.4: la temporada base cubre todas las fechas no asignadas a otra; no lleva rangos propios
+        if (esBase && !rangos.isEmpty()) {
+            throw new ReglaDominioException("La temporada base cubre las fechas no asignadas: no lleva rangos propios.");
         }
         for (int i = 0; i < rangos.size(); i++) {
             for (int j = i + 1; j < rangos.size(); j++) {
@@ -43,10 +54,19 @@ public class Temporada {
                 }
             }
         }
-        this.id = id;
-        this.nombre = nombre.trim();
-        this.periodos = rangos;
-        this.esBase = esBase;
+        return rangos;
+    }
+
+    /**
+     * 7.4: cambia el nombre o los rangos de fechas. El no solapamiento con las demás temporadas
+     * lo verifica CalendarioTemporadasService, que ve el calendario completo.
+     */
+    public void redefinir(String nuevoNombre, List<Periodo> nuevosPeriodos) {
+        if (nuevoNombre == null || nuevoNombre.isBlank()) {
+            throw new ReglaDominioException("La temporada debe tener un nombre.");
+        }
+        this.periodos = validarPeriodos(nuevoNombre, nuevosPeriodos, esBase);
+        this.nombre = nuevoNombre.trim();
     }
 
     /** Temporada base: cubre por omisión todas las fechas no asignadas (F-05). */

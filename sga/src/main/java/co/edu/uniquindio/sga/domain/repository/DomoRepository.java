@@ -6,16 +6,19 @@ import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
 import java.util.List;
 import java.util.Optional;
 
-// Corrección: antes importaba org.hibernate.internal.util.Optional (no compila y además
-// metía el framework en el dominio) y clases que no usaba.
 public interface DomoRepository {
 
     Optional<Domo> obtenerPorIdentificacion(IdentificacionDomo identificacion);
 
-    /** 7.3: los listados y búsquedas ignoran los domos eliminados (inactivos). */
+    /** 7.3: los listados y búsquedas ignoran los domos retirados de la venta y los inactivos. */
     List<Domo> listarActivos();
 
+    /** Todos los domos no eliminados (activos e inactivos), para la administración del inventario. */
+    List<Domo> listarNoEliminados();
+
     List<Domo> listarTodos();
+
+    boolean existe(IdentificacionDomo identificacion);
 
     void guardar(Domo domo);
 }

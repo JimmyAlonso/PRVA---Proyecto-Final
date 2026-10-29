@@ -57,6 +57,15 @@ public class Novedad {
         this.atendida = false;
     }
 
+    /** Rehidrata una novedad ya persistida, atendida o no. */
+    public static Novedad reconstruir(IdNovedad id, IdentificacionDomo domo, TipoNovedad tipo, String descripcion,
+                                      GravedadNovedad gravedad, String autor, LocalDateTime momentoReporte,
+                                      boolean atendida) {
+        Novedad novedad = new Novedad(id, domo, tipo, descripcion, gravedad, autor, momentoReporte);
+        novedad.atendida = atendida;
+        return novedad;
+    }
+
     public void reclasificar(GravedadNovedad nuevaGravedad) {
         if (nuevaGravedad == null) {
             throw new ReglaDominioException("La gravedad es obligatoria.");

@@ -66,6 +66,30 @@ public class Alojamiento {
     }
 
     /** L-17: los servicios adicionales tienen código único dentro del alojamiento. */
+    /** 7.3: datos del alojamiento que gestiona el administrador. Nombre y ciudad identifican al negocio (L-01, L-02). */
+    public void actualizarDatos(String descripcion, String direccion, BigDecimal latitud, BigDecimal longitud,
+                                String normasConvivencia) {
+        if (latitud == null || longitud == null) {
+            throw new ReglaDominioException("Falta la ubicación exacta (latitud y longitud).");
+        }
+        this.descripcion = descripcion;
+        this.direccion = direccion;
+        this.latitud = latitud;
+        this.longitud = longitud;
+        this.normasConvivencia = normasConvivencia;
+    }
+
+    /** 7.3: reemplaza un servicio adicional existente o lo agrega si es nuevo. */
+    public void definirServicio(ServicioAdicional servicio) {
+        if (servicio == null) {
+            throw new ReglaDominioException("El servicio adicional es obligatorio.");
+        }
+        List<ServicioAdicional> nuevos = new ArrayList<>(servicios);
+        nuevos.removeIf(s -> s.codigo().equals(servicio.codigo()));
+        nuevos.add(servicio);
+        this.servicios = List.copyOf(nuevos);
+    }
+
     public void agregarServicio(ServicioAdicional servicio) {
         if (servicio == null) {
             throw new ReglaDominioException("El servicio adicional es obligatorio.");

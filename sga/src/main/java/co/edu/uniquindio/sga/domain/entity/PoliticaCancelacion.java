@@ -5,6 +5,7 @@ import co.edu.uniquindio.sga.domain.valueobject.Porcentaje;
 import co.edu.uniquindio.sga.domain.valueobject.TramoRetencion;
 import co.edu.uniquindio.sga.domain.valueobject.VersionPolitica;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 
@@ -53,6 +54,23 @@ public class PoliticaCancelacion {
     }
 
     /** RN-13. */
+    /**
+     * F-07 y 7.4: al actualizar la política se conserva la versión anterior; la nueva toma el
+     * siguiente número y rige desde la fecha indicada. Las reservas ya creadas siguen ligadas a
+     * la versión que congelaron (RN-13, RN-22).
+     */
+    public PoliticaCancelacion nuevaVersion(List<TramoRetencion> nuevosTramos, Porcentaje nuevaRetencionNoShow,
+                                            LocalDate vigenteDesde) {
+        if (vigenteDesde == null) {
+            throw new ReglaDominioException("La nueva versión debe indicar desde cuándo rige.");
+        }
+        if (vigenteDesde.isBefore(version.vigenteDesde())) {
+            throw new ReglaDominioException("La nueva versión no puede regir antes que la versión " + version.numero() + ".");
+        }
+        return new PoliticaCancelacion(new VersionPolitica(version.numero() + 1, vigenteDesde), nuevosTramos,
+                nuevaRetencionNoShow);
+    }
+
     public Porcentaje retencionPorNoShow() {
         return retencionNoShow;
     }

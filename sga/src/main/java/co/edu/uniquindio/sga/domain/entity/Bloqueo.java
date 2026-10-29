@@ -45,6 +45,14 @@ public class Bloqueo {
     }
 
     /** RN-07: un domo con bloqueo vigente sobre una noche no está disponible para esa noche. */
+    /** Rehidrata un bloqueo ya persistido, vigente o levantado. */
+    public static Bloqueo reconstruir(IdBloqueo id, IdentificacionDomo domo, Periodo periodo, MotivoBloqueo motivo,
+                                      String observacion, boolean vigente) {
+        Bloqueo bloqueo = new Bloqueo(id, domo, periodo, motivo, observacion);
+        bloqueo.vigente = vigente;
+        return bloqueo;
+    }
+
     public boolean cubre(LocalDate noche) {
         return vigente && periodo.contiene(noche);
     }

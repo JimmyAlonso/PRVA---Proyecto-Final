@@ -44,6 +44,17 @@ public class Folio {
         this.cerrado = false;
     }
 
+    /** Rehidrata un folio ya persistido con sus movimientos en el orden en que se registraron. */
+    public static Folio reconstruir(CodigoFolio codigo, CodigoReserva reserva, List<Cargo> cargos, List<Pago> pagos,
+                                    boolean cerrado, AutorizacionCierre autorizacionCierre) {
+        Folio folio = new Folio(codigo, reserva);
+        folio.cargos = cargos == null ? List.of() : List.copyOf(cargos);
+        folio.pagos = pagos == null ? List.of() : List.copyOf(pagos);
+        folio.cerrado = cerrado;
+        folio.autorizacionCierre = autorizacionCierre;
+        return folio;
+    }
+
     /** 7.7: el folio se abre al crear la reserva, con el cargo de alojamiento ya calculado. */
     public static Folio abrir(CodigoReserva reserva, Dinero valorAlojamiento, LocalDate fecha) {
         if (reserva == null) {
