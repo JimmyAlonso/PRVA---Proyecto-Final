@@ -6,6 +6,7 @@ import co.edu.uniquindio.sga.domain.entity.Folio;
 import co.edu.uniquindio.sga.domain.entity.Pago;
 import co.edu.uniquindio.sga.domain.entity.Reserva;
 import co.edu.uniquindio.sga.domain.exception.ReglaDominioException;
+import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
 import co.edu.uniquindio.sga.domain.valueobject.Cotizacion;
 import co.edu.uniquindio.sga.domain.valueobject.DatosReservaExterna;
 import co.edu.uniquindio.sga.domain.valueobject.Deposito;
@@ -19,10 +20,9 @@ import co.edu.uniquindio.sga.domain.valueobject.MedioPago;
 import co.edu.uniquindio.sga.domain.valueobject.MotivoBloqueo;
 import co.edu.uniquindio.sga.domain.valueobject.Periodo;
 import co.edu.uniquindio.sga.domain.valueobject.Porcentaje;
-import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
 import co.edu.uniquindio.sga.domain.valueobject.TiempoPreparacion;
-import co.edu.uniquindio.sga.infraestructure.persistence.inmemory.BloqueoRepositoryInMemory;
-import co.edu.uniquindio.sga.infraestructure.persistence.inmemory.ReservaRepositoryInMemory;
+import co.edu.uniquindio.sga.infrastructure.persistence.inmemory.BloqueoRepositoryInMemory;
+import co.edu.uniquindio.sga.infrastructure.persistence.inmemory.ReservaRepositoryInMemory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -217,7 +217,7 @@ class ServiciosDeDominioTest {
 
         dom01.declararFueraDeServicio();
         assertThrows(ReglaDominioException.class, () -> entrega.registrarLlegada(reserva, dom01, folio, entrada)); // RN-11
-        dom01.marcarPreparado();
+        dom01.restablecerServicio();
 
         assertThrows(ReglaDominioException.class,
                 () -> entrega.registrarLlegada(reserva, dom01, folio, entrada.minusDays(1)));                     // RN-10

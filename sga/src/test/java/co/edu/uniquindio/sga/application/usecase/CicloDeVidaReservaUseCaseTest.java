@@ -1,6 +1,7 @@
 package co.edu.uniquindio.sga.application.usecase;
 
 import co.edu.uniquindio.sga.application.exception.ReservaNoEncontradaException;
+import co.edu.uniquindio.sga.domain.entity.Alojamiento;
 import co.edu.uniquindio.sga.domain.entity.Domo;
 import co.edu.uniquindio.sga.domain.entity.Folio;
 import co.edu.uniquindio.sga.domain.entity.Reserva;
@@ -32,16 +33,16 @@ import co.edu.uniquindio.sga.domain.valueobject.PlazoConfirmacion;
 import co.edu.uniquindio.sga.domain.valueobject.Porcentaje;
 import co.edu.uniquindio.sga.domain.valueobject.TiempoPreparacion;
 import co.edu.uniquindio.sga.domain.valueobject.TipoNovedad;
-import co.edu.uniquindio.sga.domain.entity.Alojamiento;
-import co.edu.uniquindio.sga.infraestructure.notificacion.NotificacionLogAdapter;
-import co.edu.uniquindio.sga.infraestructure.persistence.inmemory.BloqueoRepositoryInMemory;
-import co.edu.uniquindio.sga.infraestructure.persistence.inmemory.DomoRepositoryInMemory;
-import co.edu.uniquindio.sga.infraestructure.persistence.inmemory.FolioRepositoryInMemory;
-import co.edu.uniquindio.sga.infraestructure.persistence.inmemory.GeneradorCodigoReservaInMemory;
-import co.edu.uniquindio.sga.infraestructure.persistence.inmemory.NovedadRepositoryInMemory;
-import co.edu.uniquindio.sga.infraestructure.persistence.inmemory.PoliticaCancelacionRepositoryInMemory;
-import co.edu.uniquindio.sga.infraestructure.persistence.inmemory.ReservaRepositoryInMemory;
-import co.edu.uniquindio.sga.infraestructure.persistence.inmemory.TemporadaRepositoryInMemory;
+import co.edu.uniquindio.sga.infrastructure.notificacion.NotificacionLogAdapter;
+import co.edu.uniquindio.sga.infrastructure.persistence.inmemory.AlojamientoRepositoryInMemory;
+import co.edu.uniquindio.sga.infrastructure.persistence.inmemory.BloqueoRepositoryInMemory;
+import co.edu.uniquindio.sga.infrastructure.persistence.inmemory.DomoRepositoryInMemory;
+import co.edu.uniquindio.sga.infrastructure.persistence.inmemory.FolioRepositoryInMemory;
+import co.edu.uniquindio.sga.infrastructure.persistence.inmemory.GeneradorCodigoReservaInMemory;
+import co.edu.uniquindio.sga.infrastructure.persistence.inmemory.NovedadRepositoryInMemory;
+import co.edu.uniquindio.sga.infrastructure.persistence.inmemory.PoliticaCancelacionRepositoryInMemory;
+import co.edu.uniquindio.sga.infrastructure.persistence.inmemory.ReservaRepositoryInMemory;
+import co.edu.uniquindio.sga.infrastructure.persistence.inmemory.TemporadaRepositoryInMemory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -146,7 +147,7 @@ class CicloDeVidaReservaUseCaseTest {
                 parametros.plazoConfirmacion());
         llegada = new RegistrarLlegadaUseCase(reservaRepository, domoRepository, folioRepository, new EntregaDomoService());
         salida = new RegistrarSalidaUseCase(reservaRepository, domoRepository, folioRepository, new LiquidacionSalidaService());
-        folio = new GestionarFolioUseCase(folioRepository, alojamiento);
+        folio = new GestionarFolioUseCase(folioRepository, new AlojamientoRepositoryInMemory(alojamiento));
         canalExterno = new CanalExternoUseCase(new ConciliacionCanalExternoService(reservaRepository, disponibilidad,
                 cotizador, UMBRAL), reservaRepository, domoRepository, temporadaRepository, politicaRepository,
                 folioRepository, novedadRepository, generador, notificaciones, cancelar);
