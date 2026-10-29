@@ -1,4 +1,4 @@
-package co.edu.uniquindio.sga.infraestructure.persistence.inmemory;
+package co.edu.uniquindio.sga.infrastructure.persistence.inmemory;
 
 import co.edu.uniquindio.sga.domain.entity.Bloqueo;
 import co.edu.uniquindio.sga.domain.repository.BloqueoRepository;
@@ -9,6 +9,7 @@ import co.edu.uniquindio.sga.domain.valueobject.Periodo;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BloqueoRepositoryInMemory implements BloqueoRepository {
@@ -30,6 +31,11 @@ public class BloqueoRepositoryInMemory implements BloqueoRepository {
                 .filter(bloqueo -> bloqueo.getDomo().equals(domo))
                 .sorted(Comparator.comparing(bloqueo -> bloqueo.getPeriodo().desde()))
                 .toList();
+    }
+
+    @Override
+    public Optional<Bloqueo> obtenerPorId(IdBloqueo id) {
+        return Optional.ofNullable(bloqueos.get(id));
     }
 
     @Override

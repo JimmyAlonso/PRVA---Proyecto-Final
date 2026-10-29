@@ -1,9 +1,12 @@
-package co.edu.uniquindio.sga.infraestructure.persistence.inmemory;
+package co.edu.uniquindio.sga.infrastructure.persistence.inmemory;
 
 import co.edu.uniquindio.sga.domain.entity.Reserva;
 import co.edu.uniquindio.sga.domain.repository.CriteriosBusquedaReserva;
+import co.edu.uniquindio.sga.domain.repository.Paginacion;
 import co.edu.uniquindio.sga.domain.repository.ReservaRepository;
+import co.edu.uniquindio.sga.domain.repository.ResultadoPaginado;
 import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
+import co.edu.uniquindio.sga.domain.valueobject.DocumentoIdentidad;
 import co.edu.uniquindio.sga.domain.valueobject.EstadoReserva;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificadorExterno;
@@ -33,6 +36,14 @@ public class ReservaRepositoryInMemory implements ReservaRepository {
     }
 
     @Override
+    public List<Reserva> buscarActivasPorDomo(IdentificacionDomo domo) {
+        return reservas.values().stream()
+                .filter(reserva -> reserva.getDomo().equals(domo))
+                .filter(Reserva::estaActiva)
+                .toList();
+    }
+
+    @Override
     public Optional<Reserva> obtenerPorCodigo(CodigoReserva codigo) {
         return Optional.ofNullable(reservas.get(codigo));
     }
@@ -51,6 +62,17 @@ public class ReservaRepositoryInMemory implements ReservaRepository {
                 .filter(criterios::cumple)
                 .sorted(masRecientePrimero())
                 .toList();
+    }
+
+    @Override
+    public ResultadoPaginado<Reserva> buscar(CriteriosBusquedaReserva criterios, Paginacion paginacion) {
+        return ResultadoPaginado.de(buscar(criterios), paginacion);
+    }
+
+    @Override
+    public boolean existenActivasDeTitular(DocumentoIdentidad documentoTitular) {
+        return reservas.values().stream()
+                .anyMatch(reserva -> reserva.estaActiva() && reserva.getTitular().getDocumento().equals(documentoTitular));
     }
 
     /** Corrección RN-19: antes devolvía siempre Optional.empty() y la idempotencia nunca funcionaba. */

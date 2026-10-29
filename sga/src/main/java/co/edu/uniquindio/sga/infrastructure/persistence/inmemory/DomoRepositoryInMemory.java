@@ -1,4 +1,4 @@
-package co.edu.uniquindio.sga.infraestructure.persistence.inmemory;
+package co.edu.uniquindio.sga.infrastructure.persistence.inmemory;
 
 import co.edu.uniquindio.sga.domain.entity.Domo;
 import co.edu.uniquindio.sga.domain.repository.DomoRepository;
@@ -21,7 +21,17 @@ public class DomoRepositoryInMemory implements DomoRepository {
 
     @Override
     public List<Domo> listarActivos() {
-        return listarTodos().stream().filter(Domo::estaActivo).toList();
+        return listarNoEliminados().stream().filter(Domo::estaActivo).toList();
+    }
+
+    @Override
+    public List<Domo> listarNoEliminados() {
+        return listarTodos().stream().filter(domo -> !domo.isEliminado()).toList();
+    }
+
+    @Override
+    public boolean existe(IdentificacionDomo identificacion) {
+        return domos.containsKey(identificacion);
     }
 
     @Override

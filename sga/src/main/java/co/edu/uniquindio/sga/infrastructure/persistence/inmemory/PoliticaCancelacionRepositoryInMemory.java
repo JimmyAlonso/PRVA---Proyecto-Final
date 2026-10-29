@@ -1,4 +1,4 @@
-package co.edu.uniquindio.sga.infraestructure.persistence.inmemory;
+package co.edu.uniquindio.sga.infrastructure.persistence.inmemory;
 
 import co.edu.uniquindio.sga.domain.entity.PoliticaCancelacion;
 import co.edu.uniquindio.sga.domain.repository.PoliticaCancelacionRepository;
@@ -6,6 +6,7 @@ import co.edu.uniquindio.sga.domain.valueobject.VersionPolitica;
 
 import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,6 +27,18 @@ public class PoliticaCancelacionRepositoryInMemory implements PoliticaCancelacio
     @Override
     public Optional<PoliticaCancelacion> obtenerPorVersion(VersionPolitica version) {
         return Optional.ofNullable(politicas.get(version));
+    }
+
+    @Override
+    public Optional<PoliticaCancelacion> obtenerUltima() {
+        return politicas.values().stream().max(Comparator.comparing(politica -> politica.getVersion().numero()));
+    }
+
+    @Override
+    public List<PoliticaCancelacion> listarVersiones() {
+        return politicas.values().stream()
+                .sorted(Comparator.comparing((PoliticaCancelacion politica) -> politica.getVersion().numero()).reversed())
+                .toList();
     }
 
     @Override
