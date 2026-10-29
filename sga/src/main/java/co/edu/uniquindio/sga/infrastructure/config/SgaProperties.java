@@ -1,4 +1,4 @@
-package co.edu.uniquindio.sga.infraestructure.config;
+package co.edu.uniquindio.sga.infrastructure.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -14,7 +14,7 @@ import java.util.Map;
  */
 @ConfigurationProperties(prefix = "sga")
 public record SgaProperties(DatosAlojamiento alojamiento, Canales canales, DatosPrueba datosPrueba,
-                            Vencimiento vencimiento) {
+                            Vencimiento vencimiento, Seguridad seguridad) {
 
     public record DatosAlojamiento(
             String nombre,
@@ -51,5 +51,15 @@ public record SgaProperties(DatosAlojamiento alojamiento, Canales canales, Datos
 
     /** RN-21: cada cuánto revisa el sistema las reservas pendientes vencidas. */
     public record Vencimiento(long intervaloMs) {
+    }
+
+    /**
+     * 7.2 Seguridad. El secreto del JWT nunca se versiona (I-06): llega por la variable de entorno
+     * SGA_JWT_SECRETO. Si no está definida, se genera uno aleatorio al arrancar (solo desarrollo).
+     */
+    public record Seguridad(Jwt jwt, int recuperacionMinutos) {
+    }
+
+    public record Jwt(String secreto, long expiracionMinutos) {
     }
 }

@@ -1,10 +1,12 @@
-package co.edu.uniquindio.sga.infraestructure.config;
+package co.edu.uniquindio.sga.infrastructure.config;
 
+import co.edu.uniquindio.sga.application.usecase.AdministrarUsuariosUseCase;
 import co.edu.uniquindio.sga.application.usecase.CanalExternoUseCase;
 import co.edu.uniquindio.sga.application.usecase.CancelarReservaUseCase;
 import co.edu.uniquindio.sga.application.usecase.ConfirmarReservaUseCase;
 import co.edu.uniquindio.sga.application.usecase.CrearReservaUseCase;
 import co.edu.uniquindio.sga.application.usecase.DeclararNoShowUseCase;
+import co.edu.uniquindio.sga.application.usecase.GestionarDomosUseCase;
 import co.edu.uniquindio.sga.application.usecase.GestionarFolioUseCase;
 import co.edu.uniquindio.sga.application.usecase.OperarDomoUseCase;
 import co.edu.uniquindio.sga.application.usecase.RegistrarLlegadaUseCase;
@@ -23,6 +25,7 @@ import co.edu.uniquindio.sga.domain.service.CalendarioTemporadasService;
 import co.edu.uniquindio.sga.domain.service.ConfirmacionReservaService;
 import co.edu.uniquindio.sga.domain.valueobject.AutorizacionCierre;
 import co.edu.uniquindio.sga.domain.valueobject.CanalOrigen;
+import co.edu.uniquindio.sga.domain.valueobject.Correo;
 import co.edu.uniquindio.sga.domain.valueobject.DatosReservaExterna;
 import co.edu.uniquindio.sga.domain.valueobject.Dinero;
 import co.edu.uniquindio.sga.domain.valueobject.DocumentoIdentidad;
@@ -39,6 +42,7 @@ import co.edu.uniquindio.sga.domain.valueobject.MedioPago;
 import co.edu.uniquindio.sga.domain.valueobject.MotivoBloqueo;
 import co.edu.uniquindio.sga.domain.valueobject.Periodo;
 import co.edu.uniquindio.sga.domain.valueobject.Porcentaje;
+import co.edu.uniquindio.sga.domain.valueobject.Rol;
 import co.edu.uniquindio.sga.domain.valueobject.Tarifa;
 import co.edu.uniquindio.sga.domain.valueobject.TipoNovedad;
 import co.edu.uniquindio.sga.domain.valueobject.TramoRetencion;
@@ -54,9 +58,10 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * 12.3 Datos de prueba mínimos de JiyJu Glamping (Ficha A): los 5 domos con tarifas en todas
- * las temporadas, la política de cancelación, un bloqueo vigente, un domo fuera de servicio,
- * reservas en todos los estados y al menos una por cada canal. Las reservas se crean a través
+ * 12.3 Datos de prueba mínimos de JiyJu Glamping (Ficha A), cargados en H2 al iniciar: los 5
+ * domos con tarifas en todas las temporadas, la política de cancelación, al menos un usuario por
+ * rol (y dos huéspedes, para probar la verificación por propietario), un bloqueo vigente, un
+ * domo fuera de servicio, reservas en todos los estados y al menos una por cada canal. Las reservas se crean a través
  * de los casos de uso para que pasen por las mismas reglas que la API.
  *
  * <p>Se desactiva con sga.datos-prueba.habilitados=false (por ejemplo, en pruebas).
@@ -86,7 +91,9 @@ public class DatosDePrueba implements CommandLineRunner {
     private final RegistrarSalidaUseCase salida;
     private final GestionarFolioUseCase folio;
     private final OperarDomoUseCase operacion;
+    private final GestionarDomosUseCase gestionDomos;
     private final CanalExternoUseCase canalExterno;
+    private final AdministrarUsuariosUseCase usuarios;
     private final Clock reloj;
 
     public DatosDePrueba(SgaProperties propiedades, TemporadaRepository temporadas, DomoRepository domos,
@@ -94,8 +101,8 @@ public class DatosDePrueba implements CommandLineRunner {
                          CalendarioTemporadasService calendario, ConfirmacionReservaService confirmacion,
                          CrearReservaUseCase crear, ConfirmarReservaUseCase confirmar, CancelarReservaUseCase cancelar,
                          DeclararNoShowUseCase noShow, RegistrarLlegadaUseCase llegada, RegistrarSalidaUseCase salida,
-                         GestionarFolioUseCase folio, OperarDomoUseCase operacion, CanalExternoUseCase canalExterno,
-                         Clock reloj) {
+                         GestionarFolioUseCase folio, OperarDomoUseCase operacion, GestionarDomosUseCase gestionDomos,
+                         CanalExternoUseCase canalExterno, AdministrarUsuariosUseCase usuarios, Clock reloj) {
         this.propiedades = propiedades;
         this.temporadas = temporadas;
         this.domos = domos;
@@ -111,7 +118,9 @@ public class DatosDePrueba implements CommandLineRunner {
         this.salida = salida;
         this.folio = folio;
         this.operacion = operacion;
+        this.gestionDomos = gestionDomos;
         this.canalExterno = canalExterno;
+        this.usuarios = usuarios;
         this.reloj = reloj;
     }
 
@@ -120,12 +129,18 @@ public class DatosDePrueba implements CommandLineRunner {
         if (propiedades.datosPrueba() == null || !propiedades.datosPrueba().habilitados()) {
             return;
         }
+        // Con H2 en modo archivo la base sobrevive al reinicio: no se duplican los datos
+        if (!domos.listarTodos().isEmpty()) {
+            LOG.info("La base ya tiene datos: no se cargan los datos de prueba.");
+            return;
+        }
         cargarTemporadas();
         cargarDomos();
         cargarPolitica();
+        cargarUsuarios();
         cargarReservas();
         cargarEstadosOperativos();
-        LOG.info("Datos de prueba de JiyJu Glamping cargados.");
+        LOG.info("Datos de prueba de JiyJu Glamping cargados en H2.");
     }
 
     // ------------------------------------------------------------------ Ficha A.3
@@ -191,6 +206,26 @@ public class DatosDePrueba implements CommandLineRunner {
                 new TramoRetencion(0, Porcentaje.de(100))), Porcentaje.de(100)));
     }
 
+    // ------------------------------------------------------------------ 12.3: al menos un usuario por rol
+
+    /**
+     * Contraseñas de demostración para la sustentación y la colección de pruebas (no son secretos
+     * de la aplicación). Los dos huéspedes son titulares de reservas sembradas abajo.
+     */
+    private void cargarUsuarios() {
+        LocalDate nacimiento = LocalDate.of(1990, 5, 20);
+        usuarios.crear("Administrador JiyJu", new Correo("admin@jiyju.co"), "Admin2026", "3001112233",
+                new DocumentoIdentidad("1000000001"), nacimiento, Rol.ADMINISTRADOR);
+        usuarios.crear("Recepción JiyJu", new Correo("recepcion@jiyju.co"), "Recepcion2026", "3001112234",
+                new DocumentoIdentidad("1000000002"), nacimiento, Rol.RECEPCIONISTA);
+        usuarios.crear("Servicio JiyJu", new Correo("servicio@jiyju.co"), "Servicio2026", "3001112235",
+                new DocumentoIdentidad("1000000003"), nacimiento, Rol.PERSONAL_SERVICIO);
+        usuarios.crear("Valentina Ríos", new Correo("valentina.rios@correo.com"), "Huesped2026", "3001234567",
+                new DocumentoIdentidad("1094000001"), LocalDate.of(1992, 4, 10), Rol.HUESPED);
+        usuarios.crear("Andrés Cardona", new Correo("andres.cardona@correo.com"), "Huesped2026", "3001234567",
+                new DocumentoIdentidad("1094000004"), LocalDate.of(1992, 4, 10), Rol.HUESPED);
+    }
+
     // ------------------------------------------------------------------ 12.3: reservas en todos los estados
 
     private void cargarReservas() {
@@ -252,10 +287,9 @@ public class DatosDePrueba implements CommandLineRunner {
     private void cargarEstadosOperativos() {
         LocalDate hoy = LocalDate.now(reloj);
         // 12.3: un domo fuera de servicio y un bloqueo vigente
-        operacion.cambiarEstado(new IdentificacionDomo("DOM-04"),
-                OperarDomoUseCase.AccionEstadoOperativo.DECLARAR_FUERA_DE_SERVICIO);
-        operacion.registrarBloqueo(new IdentificacionDomo("DOM-04"), hoy, hoy.plusDays(7), MotivoBloqueo.MANTENIMIENTO,
-                "Reparación del proyector de cine");
+        gestionDomos.declararFueraDeServicio(new IdentificacionDomo("DOM-04"));
+        gestionDomos.registrarBloqueo(new IdentificacionDomo("DOM-04"), new Periodo(hoy, hoy.plusDays(7)),
+                MotivoBloqueo.MANTENIMIENTO, "Reparación del proyector de cine");
         operacion.registrarNovedad(new IdentificacionDomo("DOM-04"), TipoNovedad.DANO,
                 "El proyector de cine no enciende", GravedadNovedad.MODERADA, "personal.servicio",
                 LocalDateTime.now(reloj));
