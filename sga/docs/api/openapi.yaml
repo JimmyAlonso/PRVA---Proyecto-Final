@@ -1,675 +1,2800 @@
 openapi: 3.1.0
 info:
   title: SGA - JiyJu Glamping API
-  description: >
-    API del Sistema de Gestión de Alojamiento (SGA) aplicado a JiyJu Glamping (Salento, Quindío),
-    alojamiento de domos. Cubre cotización, disponibilidad, reservas y su ciclo de vida, folio,
-    operación diaria de los domos y el canal externo. Los valores monetarios van en COP sin decimales.
-    Los errores siguen el esquema ErrorRespuesta: 400 datos mal formados, 404 no encontrado,
-    422 regla de negocio violada, 409 conflicto de canal, 401 canal no autorizado.
-  version: 1.1.0
+  version: 2.0.0
+  description: 'API del Sistema de Gestión de Alojamiento (SGA) de JiyJu Glamping (Salento, Quindío), alojamiento de domos.
+    Corte 2: usuarios y seguridad (7.2), alojamiento y domos (7.3), temporadas, tarifas y política (7.4), disponibilidad y
+    reservas (7.5); incluye además folio, operación diaria y canal externo. Valores en COP sin decimales. Todos los listados
+    se paginan de 10 en 10 (parámetro pagina, base 0).
+
+
+    Seguridad: JWT en "Authorization: Bearer {token}" (POST /auth/login). El canal externo usa las cabeceras X-Canal-Id y
+    X-Canal-Credencial.
+
+
+    Errores (esquema ErrorResponse): 400 forma del mensaje, 401 no autenticado, 403 rol o propietario sin permiso, 404 recurso
+    inexistente, 409 regla de negocio violada.'
 servers:
-  - url: http://localhost:8080/api/v1
-    description: Servidor local de desarrollo
-
+- url: http://localhost:8080/api/v1
+  description: Servidor local de desarrollo
+security:
+- bearerAuth: []
 tags:
-  - name: Alojamiento
-  - name: Domos
-  - name: Reservas
-  - name: Folio
-  - name: Canal externo
-
+- name: Autenticación
+- name: Usuarios
+- name: Alojamiento
+- name: Temporadas
+- name: Política de cancelación
+- name: Domos
+- name: Operación diaria
+- name: Reservas
+- name: Folio
+- name: Canal externo
 paths:
+  /auth/registro:
+    post:
+      tags:
+      - Autenticación
+      summary: Registro público de huéspedes (7.2)
+      operationId: registrarHuesped
+      description: 'Crea un usuario con rol HUESPED. 409 si el correo ya está registrado. Acceso: público.'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroHuespedRequest'
+      responses:
+        '201':
+          description: Huésped registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+        '400': &id001
+          $ref: '#/components/responses/DatosInvalidos'
+        '409': &id002
+          $ref: '#/components/responses/ReglaDeNegocio'
+  /auth/login:
+    post:
+      tags:
+      - Autenticación
+      summary: Iniciar sesión y obtener el JWT (7.2)
+      operationId: iniciarSesion
+      description: 'Acceso: público.'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Token emitido con su expiración
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400': *id001
+        '401': &id003
+          $ref: '#/components/responses/NoAutenticado'
+  /auth/recuperacion:
+    post:
+      tags:
+      - Autenticación
+      summary: Solicitar código de recuperación de contraseña (7.2)
+      operationId: solicitarRecuperacion
+      description: 'Envía al correo registrado un código de 6 dígitos, válido 15 minutos y de un solo uso. Acceso: público.'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitarRecuperacionRequest'
+      responses:
+        '200':
+          description: Mensaje genérico (no revela si el correo existe)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+        '400': *id001
+  /auth/recuperacion/restablecer:
+    post:
+      tags:
+      - Autenticación
+      summary: Restablecer la contraseña con el código (7.2)
+      operationId: restablecerContrasena
+      description: 'Acceso: público.'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestablecerContrasenaRequest'
+      responses:
+        '200':
+          description: Contraseña restablecida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+        '400': *id001
+        '409': *id002
+  /usuarios/me:
+    get:
+      tags:
+      - Usuarios
+      summary: Consultar mi perfil
+      operationId: miPerfil
+      description: 'Acceso: cualquier usuario autenticado.'
+      responses:
+        '200':
+          description: Perfil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '401': *id003
+    put:
+      tags:
+      - Usuarios
+      summary: Actualizar nombre, teléfono y foto (el correo no es editable)
+      operationId: actualizarPerfil
+      description: 'Acceso: cualquier usuario autenticado.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarPerfilRequest'
+      responses:
+        '200':
+          description: Perfil actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '400': *id001
+        '401': *id003
+  /usuarios/me/contrasena:
+    put:
+      tags:
+      - Usuarios
+      summary: Cambiar mi contraseña con la actual y la nueva
+      operationId: cambiarContrasena
+      description: 'Acceso: cualquier usuario autenticado.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarContrasenaRequest'
+      responses:
+        '200':
+          description: Contraseña cambiada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+        '400': *id001
+        '401': *id003
+        '409': *id002
+  /usuarios:
+    get:
+      tags:
+      - Usuarios
+      summary: Listar usuarios activos (10 por página)
+      operationId: listarUsuarios
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/Pagina'
+      responses:
+        '200':
+          description: Página de usuarios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaUsuarios'
+        '401': *id003
+        '403': &id004
+          $ref: '#/components/responses/AccesoDenegado'
+    post:
+      tags:
+      - Usuarios
+      summary: Crear un usuario con su rol (7.1)
+      operationId: crearUsuario
+      description: 'Acceso: ADMINISTRADOR.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearUsuarioRequest'
+      responses:
+        '201':
+          description: Usuario creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '409': *id002
+  /usuarios/{idUsuario}:
+    get:
+      tags:
+      - Usuarios
+      summary: Consultar un usuario
+      operationId: obtenerUsuario
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdUsuario'
+      responses:
+        '200':
+          description: Usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '401': *id003
+        '403': *id004
+        '404': &id005
+          $ref: '#/components/responses/NoEncontrado'
+    delete:
+      tags:
+      - Usuarios
+      summary: Eliminar un usuario (eliminación lógica)
+      operationId: eliminarUsuario
+      description: 'No borra el registro: lo marca como eliminado. 409 si es titular de reservas PENDIENTE, CONFIRMADA o EN_CURSO.
+        Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdUsuario'
+      responses:
+        '200':
+          description: Usuario eliminado lógicamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /usuarios/{idUsuario}/rol:
+    put:
+      tags:
+      - Usuarios
+      summary: 'Asignar rol (7.2: los roles internos los asigna el administrador)'
+      operationId: asignarRol
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdUsuario'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AsignarRolRequest'
+      responses:
+        '200':
+          description: Usuario con su nuevo rol
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
   /alojamiento:
     get:
-      tags: [Alojamiento]
+      tags:
+      - Alojamiento
       summary: Datos del alojamiento, horarios, normas, servicios y parámetros (7.3)
       operationId: consultarAlojamiento
+      description: 'Acceso: público.'
+      security: []
       responses:
-        '200': { description: Datos del alojamiento }
-
+        '200':
+          description: Alojamiento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlojamientoResponse'
+    put:
+      tags:
+      - Alojamiento
+      summary: Actualizar descripción, dirección, ubicación y normas (7.3)
+      operationId: actualizarAlojamiento
+      description: 'Los parámetros de la sección 6 son configuración (application.properties) y no se editan por la API. Acceso:
+        ADMINISTRADOR.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarAlojamientoRequest'
+      responses:
+        '200':
+          description: Alojamiento actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlojamientoResponse'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '409': *id002
+  /alojamiento/servicios/{codigo}:
+    put:
+      tags:
+      - Alojamiento
+      summary: Definir o reemplazar un servicio adicional (L-17)
+      operationId: definirServicio
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - name: codigo
+        in: path
+        required: true
+        schema:
+          type: string
+        example: KIT_FOGATA
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServicioAdicionalRequest'
+      responses:
+        '200':
+          description: Alojamiento con el servicio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlojamientoResponse'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '409': *id002
+  /temporadas:
+    get:
+      tags:
+      - Temporadas
+      summary: Listar temporadas (10 por página)
+      operationId: listarTemporadas
+      description: 'Acceso: público.'
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/Pagina'
+      responses:
+        '200':
+          description: Página de temporadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaTemporadas'
+    post:
+      tags:
+      - Temporadas
+      summary: Registrar una temporada con la tarifa de cada domo activo (7.4)
+      operationId: registrarTemporada
+      description: '409 si se solapa con otra temporada, si el identificador ya existe o si algún domo activo queda sin tarifa.
+        Acceso: ADMINISTRADOR.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarTemporadaRequest'
+      responses:
+        '201':
+          description: Temporada creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemporadaResponse'
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /temporadas/{idTemporada}:
+    get:
+      tags:
+      - Temporadas
+      summary: Consultar una temporada
+      operationId: obtenerTemporada
+      description: 'Acceso: público.'
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/IdTemporada'
+      responses:
+        '200':
+          description: Temporada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemporadaResponse'
+        '404': *id005
+    put:
+      tags:
+      - Temporadas
+      summary: Cambiar el nombre o los rangos de una temporada
+      operationId: redefinirTemporada
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdTemporada'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedefinirTemporadaRequest'
+      responses:
+        '200':
+          description: Temporada actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemporadaResponse'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /politica-cancelacion/vigente:
+    get:
+      tags:
+      - Política de cancelación
+      summary: Política vigente hoy (F-07)
+      operationId: politicaVigente
+      description: 'Acceso: público.'
+      security: []
+      responses:
+        '200':
+          description: Versión vigente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliticaCancelacionResponse'
+        '404': *id005
+  /politica-cancelacion/versiones:
+    get:
+      tags:
+      - Política de cancelación
+      summary: Historial de versiones (10 por página)
+      operationId: versionesPolitica
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/Pagina'
+      responses:
+        '200':
+          description: Página de versiones
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaPoliticas'
+        '401': *id003
+        '403': *id004
+    post:
+      tags:
+      - Política de cancelación
+      summary: Publicar una nueva versión; la anterior se conserva
+      operationId: publicarPolitica
+      description: 'Acceso: ADMINISTRADOR.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicarPoliticaRequest'
+      responses:
+        '201':
+          description: Versión publicada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliticaCancelacionResponse'
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '409': *id002
+  /politica-cancelacion/versiones/{numero}:
+    get:
+      tags:
+      - Política de cancelación
+      summary: Consultar una versión
+      operationId: versionPolitica
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - name: numero
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Versión
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliticaCancelacionResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
   /domos:
     get:
-      tags: [Domos]
-      summary: Listar domos activos (paginado de 10)
+      tags:
+      - Domos
+      summary: Listar domos activos (10 por página)
       operationId: listarDomos
+      description: 'Acceso: público.'
+      security: []
       parameters:
-        - $ref: '#/components/parameters/Pagina'
+      - $ref: '#/components/parameters/Pagina'
       responses:
-        '200': { description: Página de domos }
-
+        '200':
+          description: Página de domos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaDomos'
+    post:
+      tags:
+      - Domos
+      summary: Registrar un domo con sus tarifas (7.3)
+      operationId: registrarDomo
+      description: 'Acceso: ADMINISTRADOR.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarDomoRequest'
+      responses:
+        '201':
+          description: Domo creado (activo solo si tiene tarifa en todas las temporadas)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomoResponse'
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /domos/inventario:
+    get:
+      tags:
+      - Domos
+      summary: Inventario completo, activos e inactivos (10 por página)
+      operationId: inventarioDomos
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/Pagina'
+      responses:
+        '200':
+          description: Página de domos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaDomos'
+        '401': *id003
+        '403': *id004
+  /domos/disponibles:
+    get:
+      tags:
+      - Domos
+      summary: Buscar domos disponibles por fechas y composición del grupo (7.5)
+      operationId: buscarDisponibles
+      description: 'Acceso: público.'
+      security: []
+      parameters:
+      - name: fechaEntrada
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: fechaSalida
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: fechasNacimiento
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            format: date
+        description: Fechas de nacimiento del grupo separadas por coma
+        style: form
+        explode: false
+      - name: numeroOcupantes
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 'Alternativa a fechasNacimiento: todos adultos'
+      - name: capacidadMinima
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: precioMaximo
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Valor total máximo de la estancia (COP)
+      - name: caracteristica
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: conJacuzzi
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - $ref: '#/components/parameters/Pagina'
+      responses:
+        '200':
+          description: Página de domos disponibles con su valor estimado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaCotizaciones'
+        '400': *id001
+        '409': *id002
+  /domos/pendientes-preparacion:
+    get:
+      tags:
+      - Operación diaria
+      summary: Domos pendientes o en preparación (10 por página)
+      operationId: pendientesPreparacion
+      description: 'Acceso: PERSONAL_SERVICIO, ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/Pagina'
+      responses:
+        '200':
+          description: Página de domos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaDomos'
+        '401': *id003
+        '403': *id004
   /domos/{idDomo}:
     get:
-      tags: [Domos]
-      summary: Detalle de un domo con su dotación, estado operativo y tarifas
+      tags:
+      - Domos
+      summary: Detalle del domo con dotación, estado operativo y tarifas
       operationId: obtenerDomo
+      description: 'Acceso: público.'
+      security: []
       parameters:
-        - $ref: '#/components/parameters/IdDomo'
+      - $ref: '#/components/parameters/IdDomo'
       responses:
         '200':
           description: Domo
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/DomoResponse' }
-        '404': { $ref: '#/components/responses/NoEncontrado' }
-
-  /domos/disponibles:
-    get:
-      tags: [Domos]
-      summary: Buscar domos disponibles y cotizarlos (7.5)
-      description: >
-        Aplica RN-01, RN-02, RN-07 y RN-20 y cotiza cada resultado con RN-05, RN-06 y el recargo
-        por ocupante adicional (L-20). El grupo se describe con las fechas de nacimiento
-        (fechasNacimiento) o, si no se conocen, con numeroOcupantes (se asumen adultos).
-      operationId: buscarDomosDisponibles
+              schema:
+                $ref: '#/components/schemas/DomoResponse'
+        '404': *id005
+    put:
+      tags:
+      - Domos
+      summary: Actualizar datos y dotación (7.3)
+      operationId: actualizarDomo
+      description: 'Acceso: ADMINISTRADOR.'
       parameters:
-        - { name: fechaEntrada, in: query, required: true, schema: { type: string, format: date }, example: "2026-11-20" }
-        - { name: fechaSalida, in: query, required: true, schema: { type: string, format: date }, example: "2026-11-22" }
-        - { name: fechasNacimiento, in: query, required: false, schema: { type: string }, example: "1995-05-15,1996-02-10,2017-03-02" }
-        - { name: numeroOcupantes, in: query, required: false, schema: { type: integer, minimum: 1 } }
-        - { name: capacidadMinima, in: query, required: false, schema: { type: integer } }
-        - { name: precioMaximo, in: query, required: false, schema: { type: integer } }
-        - { name: caracteristica, in: query, required: false, schema: { type: string }, example: "Malla" }
-        - { name: conJacuzzi, in: query, required: false, schema: { type: boolean } }
-        - $ref: '#/components/parameters/Pagina'
-      responses:
-        '200':
-          description: Página de domos disponibles con su cotización
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/PaginaCotizaciones' }
-        '422': { $ref: '#/components/responses/ReglaDominio' }
-
-  /domos/{idDomo}/cotizacion:
-    post:
-      tags: [Domos]
-      summary: Cotizar una estancia con desglose noche por noche (7.4)
-      operationId: cotizarEstancia
-      parameters:
-        - $ref: '#/components/parameters/IdDomo'
+      - $ref: '#/components/parameters/IdDomo'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CotizarEstanciaRequest' }
+            schema:
+              $ref: '#/components/schemas/ActualizarDomoRequest'
+      responses:
+        '200':
+          description: Domo actualizado; advierte las reservas por encima de la nueva capacidad
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomoActualizadoResponse'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /domos/{idDomo}/cotizacion:
+    post:
+      tags:
+      - Domos
+      summary: Cotizar una estancia con desglose noche por noche (7.4)
+      operationId: cotizarEstancia
+      description: 'Acceso: público.'
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CotizarEstanciaRequest'
       responses:
         '200':
           description: Cotización
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/CotizacionDomoResponse' }
-        '422': { $ref: '#/components/responses/ReglaDominio' }
-
-  /domos/pendientes-preparacion:
+              schema:
+                $ref: '#/components/schemas/CotizacionDomoResponse'
+        '400': *id001
+        '404': *id005
+        '409': *id002
+  /domos/{idDomo}/calendario:
     get:
-      tags: [Domos]
-      summary: Domos pendientes o en preparación (personal de servicio)
-      operationId: domosPendientesPreparacion
-      responses:
-        '200': { description: Lista de domos }
-
-  /domos/{idDomo}/estado-operativo:
-    post:
-      tags: [Domos]
-      summary: Cambiar el estado operativo (7.6)
-      description: INICIAR_PREPARACION, MARCAR_PREPARADO o DECLARAR_FUERA_DE_SERVICIO (no desde OCUPADO).
-      operationId: cambiarEstadoOperativo
+      tags:
+      - Domos
+      summary: Calendario de ocupación por rango de fechas (7.5)
+      operationId: calendarioOcupacion
+      description: 'Acceso: público.'
+      security: []
       parameters:
-        - $ref: '#/components/parameters/IdDomo'
-      requestBody:
+      - $ref: '#/components/parameters/IdDomo'
+      - name: desde
+        in: query
         required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [accion]
-              properties:
-                accion: { type: string, enum: [INICIAR_PREPARACION, MARCAR_PREPARADO, DECLARAR_FUERA_DE_SERVICIO] }
-      responses:
-        '200': { description: Domo actualizado }
-        '422': { $ref: '#/components/responses/ReglaDominio' }
-
-  /domos/{idDomo}/novedades:
-    post:
-      tags: [Domos]
-      summary: Registrar una novedad (daño, faltante o situación)
-      operationId: registrarNovedad
-      parameters:
-        - $ref: '#/components/parameters/IdDomo'
-      requestBody:
+        schema:
+          type: string
+          format: date
+      - name: hasta
+        in: query
         required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [tipo, descripcion, gravedad, autor]
-              properties:
-                tipo: { type: string, enum: [DANO, FALTANTE, SITUACION] }
-                descripcion: { type: string }
-                gravedad: { type: string, enum: [LEVE, MODERADA, GRAVE] }
-                autor: { type: string }
+        schema:
+          type: string
+          format: date
       responses:
-        '201': { description: Novedad registrada }
-    get:
-      tags: [Domos]
-      summary: Historial de novedades del domo (paginado)
-      operationId: historialNovedades
-      parameters:
-        - $ref: '#/components/parameters/IdDomo'
-        - $ref: '#/components/parameters/Pagina'
-      responses:
-        '200': { description: Página de novedades }
-
-  /domos/{idDomo}/bloqueos:
-    post:
-      tags: [Domos]
-      summary: Registrar un bloqueo (no se permite sobre noches con reservas activas)
-      operationId: registrarBloqueo
-      parameters:
-        - $ref: '#/components/parameters/IdDomo'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [desde, hasta, motivo]
-              properties:
-                desde: { type: string, format: date }
-                hasta: { type: string, format: date }
-                motivo: { type: string, enum: [MANTENIMIENTO, USO_INTERNO, FUERA_DE_SERVICIO] }
-                observacion: { type: string }
-      responses:
-        '201': { description: Bloqueo registrado }
-        '422': { $ref: '#/components/responses/ReglaDominio' }
-    get:
-      tags: [Domos]
-      summary: Bloqueos del domo
-      operationId: listarBloqueos
-      parameters:
-        - $ref: '#/components/parameters/IdDomo'
-      responses:
-        '200': { description: Lista de bloqueos }
-
-  /reservas:
-    post:
-      tags: [Reservas]
-      summary: Crear una reserva (canal PORTAL o DIRECTO)
-      description: >
-        Valida en orden 7.5: RN-03, RN-04, domo activo con tarifas completas, RN-02, RN-01/RN-07
-        y RN-20. Congela valor y política (RN-22), abre el folio y notifica al titular. Nace PENDIENTE.
-      operationId: crearReserva
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/CrearReservaRequest' }
-      responses:
-        '201':
-          description: Reserva creada en estado PENDIENTE
+        '200':
+          description: Noches LIBRE, RESERVADA o BLOQUEADA
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ReservaDetalleResponse' }
-        '400': { $ref: '#/components/responses/DatosInvalidos' }
-        '422': { $ref: '#/components/responses/ReglaDominio' }
-    get:
-      tags: [Reservas]
-      summary: Listar reservas con filtros (más reciente primero, 10 por página)
-      operationId: listarReservas
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NocheCalendarioResponse'
+        '400': *id001
+        '404': *id005
+        '409': *id002
+  /domos/{idDomo}/tarifas:
+    put:
+      tags:
+      - Domos
+      summary: Definir o cambiar tarifas; el valor anterior pasa al histórico (7.4)
+      operationId: establecerTarifas
+      description: 'Acceso: ADMINISTRADOR.'
       parameters:
-        - { name: estado, in: query, schema: { type: string, enum: [PENDIENTE, CONFIRMADA, EN_CURSO, FINALIZADA, CANCELADA, NO_SHOW] } }
-        - { name: idDomo, in: query, schema: { type: string } }
-        - { name: canal, in: query, schema: { type: string, enum: [PORTAL, DIRECTO, EXTERNO] } }
-        - { name: documentoTitular, in: query, schema: { type: string } }
-        - { name: desde, in: query, schema: { type: string, format: date } }
-        - { name: hasta, in: query, schema: { type: string, format: date } }
-        - $ref: '#/components/parameters/Pagina'
+      - $ref: '#/components/parameters/IdDomo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstablecerTarifasRequest'
       responses:
-        '200': { description: Página de reservas (ReservaResumenResponse) }
-
+        '200':
+          description: Domo con sus tarifas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomoResponse'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /domos/{idDomo}/tarifas/historial:
+    get:
+      tags:
+      - Domos
+      summary: Histórico de tarifas del domo (7.4)
+      operationId: historialTarifas
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      responses:
+        '200':
+          description: Tarifas reemplazadas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistroTarifaResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
+  /domos/{idDomo}/activar:
+    post:
+      tags:
+      - Domos
+      summary: Activar el domo (exige tarifas completas, 7.4)
+      operationId: activarDomo
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      responses:
+        '200':
+          description: Domo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomoResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /domos/{idDomo}/retirar:
+    post:
+      tags:
+      - Domos
+      summary: 'Retirar de la venta: eliminación lógica (7.3)'
+      operationId: retirarDomo
+      description: '409 si tiene reservas activas o futuras. Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      responses:
+        '200':
+          description: Domo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomoResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /domos/{idDomo}/fuera-de-servicio:
+    post:
+      tags:
+      - Domos
+      summary: Declarar FUERA_DE_SERVICIO (desde un estado no ocupado)
+      operationId: declararFueraDeServicio
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      responses:
+        '200':
+          description: Domo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomoResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /domos/{idDomo}/restablecer-servicio:
+    post:
+      tags:
+      - Domos
+      summary: FUERA_DE_SERVICIO → PREPARADO
+      operationId: restablecerServicio
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      responses:
+        '200':
+          description: Domo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomoResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /domos/{idDomo}/iniciar-preparacion:
+    post:
+      tags:
+      - Operación diaria
+      summary: PENDIENTE_PREPARACION → EN_PREPARACION (7.6)
+      operationId: iniciarPreparacion
+      description: 'Acceso: PERSONAL_SERVICIO, ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      responses:
+        '200':
+          description: Domo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomoResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /domos/{idDomo}/marcar-preparado:
+    post:
+      tags:
+      - Operación diaria
+      summary: EN_PREPARACION → PREPARADO (7.6)
+      operationId: marcarPreparado
+      description: 'Acceso: PERSONAL_SERVICIO, ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      responses:
+        '200':
+          description: Domo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomoResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /domos/{idDomo}/novedades:
+    post:
+      tags:
+      - Operación diaria
+      summary: 'Registrar una novedad (autor: el usuario autenticado)'
+      operationId: registrarNovedad
+      description: 'Acceso: PERSONAL_SERVICIO, RECEPCIONISTA, ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarNovedadRequest'
+      responses:
+        '201':
+          description: Novedad registrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NovedadResponse'
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+    get:
+      tags:
+      - Operación diaria
+      summary: Historial de novedades del domo (10 por página)
+      operationId: historialNovedades
+      description: 'Acceso: PERSONAL_SERVICIO, RECEPCIONISTA, ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      - $ref: '#/components/parameters/Pagina'
+      responses:
+        '200':
+          description: Página de novedades
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaNovedades'
+        '401': *id003
+        '403': *id004
+        '404': *id005
+  /domos/{idDomo}/bloqueos:
+    post:
+      tags:
+      - Domos
+      summary: Registrar un bloqueo con rango y motivo (RN-07)
+      operationId: registrarBloqueo
+      description: '409 si alguna noche del rango ya tiene reservas activas. Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarBloqueoRequest'
+      responses:
+        '201':
+          description: Bloqueo registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BloqueoResponse'
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+    get:
+      tags:
+      - Domos
+      summary: Bloqueos del domo (10 por página)
+      operationId: listarBloqueos
+      description: 'Acceso: RECEPCIONISTA, ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      - $ref: '#/components/parameters/Pagina'
+      responses:
+        '200':
+          description: Página de bloqueos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaBloqueos'
+        '401': *id003
+        '403': *id004
+        '404': *id005
+  /domos/{idDomo}/bloqueos/{idBloqueo}/levantar:
+    post:
+      tags:
+      - Domos
+      summary: Levantar un bloqueo (eliminación lógica)
+      operationId: levantarBloqueo
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/IdDomo'
+      - name: idBloqueo
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Bloqueo no vigente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BloqueoResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
+  /reservas:
+    get:
+      tags:
+      - Reservas
+      summary: Listar reservas con filtros, de la más reciente a la más antigua (7.5)
+      operationId: listarReservas
+      description: 'Acceso: RECEPCIONISTA, ADMINISTRADOR.'
+      parameters:
+      - name: estado
+        in: query
+        required: false
+        schema:
+          type: string
+        description: PENDIENTE, CONFIRMADA, EN_CURSO, FINALIZADA, CANCELADA o NO_SHOW
+      - name: idDomo
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: canal
+        in: query
+        required: false
+        schema:
+          type: string
+        description: PORTAL, DIRECTO o EXTERNO
+      - name: documentoTitular
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: desde
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: hasta
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/Pagina'
+      responses:
+        '200':
+          description: Página de reservas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaReservas'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+    post:
+      tags:
+      - Reservas
+      summary: Crear una reserva (nace PENDIENTE, congela valor y política y abre el folio)
+      operationId: crearReserva
+      description: 'El huésped reserva por PORTAL y a su propio nombre; la recepción por DIRECTO a nombre de cualquier titular
+        (403 si no). Acceso: HUESPED, RECEPCIONISTA, ADMINISTRADOR.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearReservaRequest'
+      responses:
+        '201':
+          description: Reserva creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
+  /reservas/mias:
+    get:
+      tags:
+      - Reservas
+      summary: Mi historial de reservas (huésped)
+      operationId: misReservas
+      description: 'Acceso: HUESPED.'
+      parameters:
+      - $ref: '#/components/parameters/Pagina'
+      responses:
+        '200':
+          description: Página de reservas del huésped autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaReservas'
+        '401': *id003
+        '403': *id004
   /reservas/movimientos:
     get:
-      tags: [Reservas]
-      summary: Llegadas y salidas previstas para un día (7.6)
+      tags:
+      - Operación diaria
+      summary: Llegadas y salidas previstas del día (7.6)
       operationId: movimientosDelDia
+      description: 'Acceso: RECEPCIONISTA, ADMINISTRADOR.'
       parameters:
-        - { name: fecha, in: query, required: false, schema: { type: string, format: date } }
+      - name: fecha
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
       responses:
-        '200': { description: Llegadas y salidas }
-
+        '200':
+          description: Llegadas y salidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovimientosDelDiaResponse'
+        '401': *id003
+        '403': *id004
   /reservas/{codigo}:
     get:
-      tags: [Reservas]
+      tags:
+      - Reservas
       summary: Detalle de una reserva
       operationId: obtenerReserva
+      description: 'Acceso: HUESPED (solo las propias), RECEPCIONISTA, ADMINISTRADOR.'
       parameters:
-        - $ref: '#/components/parameters/Codigo'
+      - $ref: '#/components/parameters/Codigo'
       responses:
         '200':
           description: Reserva
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ReservaDetalleResponse' }
-        '404': { $ref: '#/components/responses/NoEncontrado' }
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
     put:
-      tags: [Reservas]
-      summary: Modificar fechas, ocupantes o domo (RN-14)
-      description: Solo en PENDIENTE o CONFIRMADA. Recalcula con tarifas vigentes y registra el ajuste en el folio.
+      tags:
+      - Reservas
+      summary: Modificar fechas, ocupantes o domo de una reserva no iniciada (RN-14)
       operationId: modificarReserva
+      description: 'Acceso: RECEPCIONISTA, ADMINISTRADOR.'
       parameters:
-        - $ref: '#/components/parameters/Codigo'
+      - $ref: '#/components/parameters/Codigo'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                idDomo: { type: string }
-                fechaEntrada: { type: string, format: date }
-                fechaSalida: { type: string, format: date }
-                ocupantes:
-                  type: array
-                  description: Lista completa de acompañantes (el titular se conserva)
-                  items: { $ref: '#/components/schemas/OcupanteRequest' }
+              $ref: '#/components/schemas/ModificarReservaRequest'
       responses:
-        '200': { description: Reserva modificada }
-        '422': { $ref: '#/components/responses/ReglaDominio' }
-
+        '200':
+          description: Reserva modificada; la diferencia queda como ajuste en el folio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
   /reservas/{codigo}/confirmar:
     post:
-      tags: [Reservas]
-      summary: Confirmar una reserva (PENDIENTE → CONFIRMADA)
-      description: >
-        Exige hora estimada de llegada (RN-09), anticipo del 50 % pagado en el folio (L-11) y, si el
-        domo tiene Jacuzzi, llegada con al menos 3 horas sobre el check-in de las 15:00 (L-21).
+      tags:
+      - Reservas
+      summary: Confirmar (exige hora de llegada, anticipo y L-21)
       operationId: confirmarReserva
+      description: 'Acceso: RECEPCIONISTA, ADMINISTRADOR.'
       parameters:
-        - $ref: '#/components/parameters/Codigo'
+      - $ref: '#/components/parameters/Codigo'
+      responses:
+        '200':
+          description: Reserva actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
       requestBody:
         required: false
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                horaEstimadaLlegada: { type: string, example: "18:30" }
-      responses:
-        '200': { description: Reserva confirmada }
-        '422': { $ref: '#/components/responses/ReglaDominio' }
-
+              $ref: '#/components/schemas/ConfirmarReservaRequest'
   /reservas/{codigo}/cancelar:
     post:
-      tags: [Reservas]
-      summary: Cancelar una reserva (retención según la política congelada, RN-13)
+      tags:
+      - Reservas
+      summary: Cancelar con la política congelada (RN-13)
       operationId: cancelarReserva
+      description: 'Acceso: HUESPED (solo las propias), RECEPCIONISTA, ADMINISTRADOR.'
       parameters:
-        - $ref: '#/components/parameters/Codigo'
+      - $ref: '#/components/parameters/Codigo'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CancelarReservaRequest' }
+            schema:
+              $ref: '#/components/schemas/CancelarReservaRequest'
       responses:
-        '200': { description: Reserva cancelada y disponibilidad liberada }
-        '422': { $ref: '#/components/responses/ReglaDominio' }
-
+        '200':
+          description: Reserva actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
   /reservas/{codigo}/check-in:
     post:
-      tags: [Reservas]
-      summary: Registrar la llegada (CONFIRMADA → EN_CURSO; domo → OCUPADO)
-      description: Valida RN-10, RN-11 (domo PREPARADO) y L-22 (depósito registrado en el folio).
-      operationId: registrarCheckIn
+      tags:
+      - Reservas
+      summary: Registrar la llegada (RN-10, RN-11, L-22)
+      operationId: registrarLlegada
+      description: 'Acceso: RECEPCIONISTA, ADMINISTRADOR.'
       parameters:
-        - $ref: '#/components/parameters/Codigo'
+      - $ref: '#/components/parameters/Codigo'
       responses:
-        '200': { description: Check-in exitoso }
-        '422': { $ref: '#/components/responses/ReglaDominio' }
-
+        '200':
+          description: Reserva actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
   /reservas/{codigo}/check-out:
     post:
-      tags: [Reservas]
-      summary: Registrar la salida (EN_CURSO → FINALIZADA; domo → PENDIENTE_PREPARACION)
-      description: Cierra el folio. Con saldo distinto de cero exige autorización con autor y motivo (RN-17).
-      operationId: registrarCheckOut
+      tags:
+      - Reservas
+      summary: Registrar la salida y cerrar el folio (RN-17)
+      operationId: registrarSalida
+      description: 'Con saldo distinto de cero exige motivoAutorizacion y rol ADMINISTRADOR (403 si no). Acceso: RECEPCIONISTA,
+        ADMINISTRADOR.'
       parameters:
-        - $ref: '#/components/parameters/Codigo'
+      - $ref: '#/components/parameters/Codigo'
+      responses:
+        '200':
+          description: Reserva actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
       requestBody:
         required: false
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                autorizadoPor: { type: string }
-                motivoAutorizacion: { type: string }
-      responses:
-        '200': { description: Salida registrada }
-        '422': { $ref: '#/components/responses/ReglaDominio' }
-
+              $ref: '#/components/schemas/RegistrarSalidaRequest'
   /reservas/{codigo}/no-show:
     post:
-      tags: [Reservas]
-      summary: Declarar no-show (desde las 20:00 del día de entrada)
+      tags:
+      - Reservas
+      summary: Declarar no-show desde la hora límite (L-15)
       operationId: declararNoShow
+      description: 'Acceso: RECEPCIONISTA, ADMINISTRADOR.'
       parameters:
-        - $ref: '#/components/parameters/Codigo'
+      - $ref: '#/components/parameters/Codigo'
       responses:
-        '200': { description: Reserva en NO_SHOW }
-        '422': { $ref: '#/components/responses/ReglaDominio' }
-
+        '200':
+          description: Reserva actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
   /reservas/{codigo}/folio:
     get:
-      tags: [Folio]
-      summary: Consultar el folio con cargos, pagos y saldo
+      tags:
+      - Folio
+      summary: Consultar el folio con cargos, pagos y saldo (7.7)
       operationId: consultarFolio
+      description: 'Acceso: HUESPED (solo las propias), RECEPCIONISTA, ADMINISTRADOR.'
       parameters:
-        - $ref: '#/components/parameters/Codigo'
+      - $ref: '#/components/parameters/Codigo'
       responses:
         '200':
           description: Folio
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/FolioResponse' }
-
+              schema:
+                $ref: '#/components/schemas/FolioResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
   /reservas/{codigo}/folio/pagos:
     post:
-      tags: [Folio]
-      summary: Registrar un pago parcial (RN-15)
+      tags:
+      - Folio
+      summary: Registrar un pago con medio y fecha (RN-15)
       operationId: registrarPago
+      description: 'Acceso: RECEPCIONISTA, ADMINISTRADOR.'
       parameters:
-        - $ref: '#/components/parameters/Codigo'
+      - $ref: '#/components/parameters/Codigo'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [monto, medio]
-              properties:
-                monto: { type: integer, example: 500000 }
-                medio: { type: string, enum: [TRANSFERENCIA, TARJETA, EFECTIVO] }
-                fecha: { type: string, format: date }
+              $ref: '#/components/schemas/RegistrarPagoRequest'
       responses:
-        '201': { description: Folio actualizado }
-
+        '201':
+          description: Folio con el pago
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FolioResponse'
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
   /reservas/{codigo}/folio/servicios:
     post:
-      tags: [Folio]
-      summary: Registrar un servicio adicional (L-17)
+      tags:
+      - Folio
+      summary: Cargar un servicio adicional (L-17)
       operationId: registrarServicio
+      description: 'Acceso: RECEPCIONISTA, ADMINISTRADOR.'
       parameters:
-        - $ref: '#/components/parameters/Codigo'
+      - $ref: '#/components/parameters/Codigo'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [codigoServicio, cantidad]
-              properties:
-                codigoServicio: { type: string, enum: [KIT_FOGATA, DECORACION_ROMANTICA, CENA_DOMO] }
-                cantidad: { type: integer, minimum: 1 }
+              $ref: '#/components/schemas/RegistrarServicioRequest'
       responses:
-        '201': { description: Folio actualizado }
-
+        '201':
+          description: Folio con el cargo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FolioResponse'
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+        '400': *id001
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
   /reservas/{codigo}/folio/deposito:
     post:
-      tags: [Folio]
+      tags:
+      - Folio
       summary: Registrar el depósito exigido para el check-in (L-22)
       operationId: registrarDeposito
+      description: 'Acceso: RECEPCIONISTA, ADMINISTRADOR.'
       parameters:
-        - $ref: '#/components/parameters/Codigo'
+      - $ref: '#/components/parameters/Codigo'
       responses:
-        '201': { description: Folio actualizado }
-
+        '201':
+          description: Folio con el depósito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FolioResponse'
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
   /reservas/{codigo}/folio/deposito/devolucion:
     post:
-      tags: [Folio]
-      summary: Devolver el depósito (movimiento inverso, RN-16)
+      tags:
+      - Folio
+      summary: Devolver el depósito como movimiento inverso (RN-16)
       operationId: devolverDeposito
+      description: 'Acceso: RECEPCIONISTA, ADMINISTRADOR.'
       parameters:
-        - $ref: '#/components/parameters/Codigo'
+      - $ref: '#/components/parameters/Codigo'
       responses:
-        '200': { description: Folio actualizado }
-
+        '200':
+          description: Folio actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FolioResponse'
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id002
   /canales/externo/disponibilidad:
     get:
-      tags: [Canal externo]
-      summary: "Operación 1: disponibilidad para un rango y una composición de grupo"
-      operationId: disponibilidadCanalExterno
+      tags:
+      - Canal externo
+      summary: Disponibilidad para un rango y un grupo (10.3.1)
+      operationId: disponibilidadExterna
+      description: 'Acceso: canal externo con credencial (sin JWT).'
       parameters:
-        - $ref: '#/components/parameters/CanalId'
-        - $ref: '#/components/parameters/CanalCredencial'
-        - { name: fechaEntrada, in: query, required: true, schema: { type: string, format: date } }
-        - { name: fechaSalida, in: query, required: true, schema: { type: string, format: date } }
-        - { name: fechasNacimiento, in: query, required: true, schema: { type: string }, example: "1990-01-01,1992-05-05" }
+      - &id006
+        $ref: '#/components/parameters/CanalId'
+      - &id007
+        $ref: '#/components/parameters/CanalCredencial'
+      - name: fechaEntrada
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: fechaSalida
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: fechasNacimiento
+        in: query
+        required: true
+        schema:
+          type: array
+          items:
+            type: string
+            format: date
+        style: form
+        explode: false
+      - $ref: '#/components/parameters/Pagina'
       responses:
-        '200': { description: Domos disponibles con su cotización }
-        '401': { $ref: '#/components/responses/CanalNoAutorizado' }
-
+        '200':
+          description: Página de domos disponibles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaCotizaciones'
+        '400': *id001
+        '401': *id003
+        '409': *id002
   /canales/externo/reservas:
     post:
-      tags: [Canal externo]
-      summary: "Operación 2: crear una reserva externa (RN-18, RN-19)"
+      tags:
+      - Canal externo
+      summary: 'Crear reserva externa: 201 creada, 200 mensaje repetido (RN-19), 409 conflicto (RN-18)'
       operationId: crearReservaExterna
+      description: 'Acceso: canal externo con credencial (sin JWT).'
       parameters:
-        - $ref: '#/components/parameters/CanalId'
-        - $ref: '#/components/parameters/CanalCredencial'
+      - *id006
+      - *id007
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/ReservaExternaRequest' }
+            schema:
+              $ref: '#/components/schemas/ReservaExternaRequest'
       responses:
-        '201': { description: Reserva externa creada }
-        '200': { description: Mensaje repetido; se devuelve la reserva existente sin duplicarla (RN-19) }
-        '409': { description: Conflicto de canal; se rechaza y se registra para el administrador (RN-18) }
-        '401': { $ref: '#/components/responses/CanalNoAutorizado' }
-
+        '201':
+          description: Reserva externa creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoReservaExternaResponse'
+        '200':
+          description: 'Mensaje repetido: no se duplica'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoReservaExternaResponse'
+        '409':
+          description: Conflicto de canal registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoReservaExternaResponse'
+        '400': *id001
+        '401': *id003
+        '404': *id005
   /canales/externo/reservas/{idTransaccionExterna}/cancelar:
     post:
-      tags: [Canal externo]
-      summary: "Operación 3: cancelar una reserva externa"
+      tags:
+      - Canal externo
+      summary: Cancelar una reserva externa
       operationId: cancelarReservaExterna
+      description: 'Acceso: canal externo con credencial (sin JWT).'
       parameters:
-        - $ref: '#/components/parameters/CanalId'
-        - $ref: '#/components/parameters/CanalCredencial'
-        - { name: idTransaccionExterna, in: path, required: true, schema: { type: string } }
+      - *id006
+      - *id007
+      - name: idTransaccionExterna
+        in: path
+        required: true
+        schema:
+          type: string
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CancelarReservaRequest' }
+            schema:
+              $ref: '#/components/schemas/CancelarReservaRequest'
       responses:
-        '200': { description: Reserva cancelada }
-        '404': { $ref: '#/components/responses/NoEncontrado' }
-
+        '200':
+          description: Reserva cancelada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDetalleResponse'
+        '400': *id001
+        '401': *id003
+        '404': *id005
+        '409': *id002
   /canales/conflictos:
     get:
-      tags: [Canal externo]
-      summary: Conflictos de canal registrados (administrador)
+      tags:
+      - Canal externo
+      summary: Conflictos de canal registrados (10 por página)
       operationId: conflictosDeCanal
+      description: 'Acceso: ADMINISTRADOR.'
+      parameters:
+      - $ref: '#/components/parameters/Pagina'
       responses:
-        '200': { description: Lista de novedades de tipo CONFLICTO_CANAL }
-
+        '200':
+          description: Página de conflictos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaNovedades'
+        '401': *id003
+        '403': *id004
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   parameters:
-    IdDomo: { name: idDomo, in: path, required: true, schema: { type: string }, example: "DOM-01" }
-    Codigo: { name: codigo, in: path, required: true, schema: { type: string }, example: "RES-2026-00001" }
-    Pagina: { name: pagina, in: query, required: false, schema: { type: integer, minimum: 0, default: 0 } }
-    CanalId: { name: X-Canal-Id, in: header, required: true, schema: { type: string }, example: "BOOKING_COM" }
-    CanalCredencial: { name: X-Canal-Credencial, in: header, required: true, schema: { type: string } }
-
+    Pagina:
+      name: pagina
+      in: query
+      required: false
+      description: Página base 0 (10 resultados por página)
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+    IdDomo:
+      name: idDomo
+      in: path
+      required: true
+      schema:
+        type: string
+      example: DOM-01
+    Codigo:
+      name: codigo
+      in: path
+      required: true
+      schema:
+        type: string
+      example: RES-2026-00001
+    IdTemporada:
+      name: idTemporada
+      in: path
+      required: true
+      schema:
+        type: string
+      example: ALTA
+    IdUsuario:
+      name: idUsuario
+      in: path
+      required: true
+      schema:
+        type: string
+    CanalId:
+      name: X-Canal-Id
+      in: header
+      required: true
+      schema:
+        type: string
+      example: BOOKING_COM
+    CanalCredencial:
+      name: X-Canal-Credencial
+      in: header
+      required: true
+      schema:
+        type: string
   responses:
     DatosInvalidos:
-      description: Datos inválidos o solicitud mal formada
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorRespuesta' } } }
+      description: Forma del mensaje inválida (Bean Validation, JSON o parámetros)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NoAutenticado:
+      description: Sin token válido, credenciales incorrectas o canal sin credencial
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    AccesoDenegado:
+      description: El rol o el propietario del recurso no permiten la operación
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     NoEncontrado:
-      description: Recurso no encontrado
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorRespuesta' } } }
-    ReglaDominio:
-      description: Regla de negocio violada
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorRespuesta' } } }
-    CanalNoAutorizado:
-      description: Canal no registrado o credencial inválida
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorRespuesta' } } }
-
+      description: El recurso no existe
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ReglaDeNegocio:
+      description: Se viola una regla del negocio (ReglaDominioException)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
-    OcupanteRequest:
+    ErrorResponse:
       type: object
-      required: [documento, nombre, fechaNacimiento]
       properties:
-        documento: { type: string, example: "1094888777" }
-        nombre: { type: string, example: "Luis Ramírez" }
-        fechaNacimiento: { type: string, format: date, example: "1995-05-15" }
-
-    TitularRequest:
-      type: object
-      required: [documento, nombre, fechaNacimiento, correo, telefono]
-      properties:
-        documento: { type: string, example: "1094123456" }
-        nombre: { type: string, example: "Ana Ramírez" }
-        fechaNacimiento: { type: string, format: date, example: "1990-05-12" }
-        correo: { type: string, format: email, example: "ana@correo.com" }
-        telefono: { type: string, example: "3001234567" }
-
-    CrearReservaRequest:
-      type: object
-      required: [idDomo, fechaEntrada, fechaSalida, canalOrigen, titular]
-      properties:
-        idDomo: { type: string, example: "DOM-03" }
-        fechaEntrada: { type: string, format: date, example: "2026-11-20" }
-        fechaSalida: { type: string, format: date, example: "2026-11-22" }
-        canalOrigen: { type: string, enum: [PORTAL, DIRECTO] }
-        horaEstimadaLlegada: { type: string, example: "18:30" }
-        titular: { $ref: '#/components/schemas/TitularRequest' }
-        ocupantes:
+        codigo:
+          type: string
+          example: REGLA_DE_NEGOCIO
+        mensaje:
+          type: string
+        detalles:
           type: array
-          description: Acompañantes; el titular se agrega solo como ocupante
-          items: { $ref: '#/components/schemas/OcupanteRequest' }
-
-    CancelarReservaRequest:
-      type: object
-      required: [motivo]
-      properties:
-        motivo: { type: string, minLength: 5, maxLength: 300 }
-
-    CotizarEstanciaRequest:
-      type: object
-      required: [fechaEntrada, fechaSalida, fechasNacimiento]
-      properties:
-        fechaEntrada: { type: string, format: date }
-        fechaSalida: { type: string, format: date }
-        fechasNacimiento: { type: array, items: { type: string, format: date } }
-
-    ReservaExternaRequest:
-      type: object
-      required: [idTransaccionExterna, idDomo, fechaEntrada, fechaSalida, titular]
-      properties:
-        idTransaccionExterna: { type: string, example: "EXT-998877" }
-        idDomo: { type: string, example: "DOM-01" }
-        fechaEntrada: { type: string, format: date }
-        fechaSalida: { type: string, format: date }
-        horaEstimadaLlegada: { type: string, example: "19:00" }
-        titular: { $ref: '#/components/schemas/TitularRequest' }
-        ocupantes: { type: array, items: { $ref: '#/components/schemas/OcupanteRequest' } }
-
-    DetalleNoche:
+          items:
+            type: string
+        ruta:
+          type: string
+        momento: &id011
+          type: string
+          format: date-time
+    MensajeResponse:
       type: object
       properties:
-        fecha: { type: string, format: date }
-        temporada: { type: string, example: "Base" }
-        tarifaPorOcupanteFacturable: { type: integer, example: 250000 }
-        ocupantesFacturables: { type: integer, example: 2 }
-        recargoPersonaAdicional: { type: integer, example: 62500 }
-        subtotal: { type: integer, example: 562500 }
-
-    CotizacionDomoResponse:
+        mensaje:
+          type: string
+    RegistroHuespedRequest:
       type: object
       properties:
-        idDomo: { type: string, example: "DOM-03" }
-        nombre: { type: string, example: "Domo Familiar" }
-        capacidadMaxima: { type: integer, example: 4 }
-        tieneJacuzzi: { type: boolean }
-        caracteristicas: { type: array, items: { type: string } }
-        noches: { type: integer }
-        recargoOcupanteAdicional: { type: integer, example: 125000 }
-        valorTotalEstancia: { type: integer, example: 1125000 }
-        moneda: { type: string, example: "COP" }
-        desglose: { type: array, items: { $ref: '#/components/schemas/DetalleNoche' } }
-
-    PaginaCotizaciones:
+        nombre:
+          type: string
+        correo:
+          type: string
+          format: email
+        contrasena: &id008
+          type: string
+          pattern: ^(?=.*[A-Z])(?=.*\d).{8,72}$
+          description: Mínimo 8 caracteres, con al menos una mayúscula y un número
+        telefono:
+          type: string
+        documento:
+          type: string
+          minLength: 5
+          maxLength: 15
+        fechaNacimiento: &id009
+          type: string
+          format: date
+      required:
+      - nombre
+      - correo
+      - contrasena
+      - telefono
+      - documento
+      - fechaNacimiento
+    LoginRequest:
       type: object
       properties:
-        contenido: { type: array, items: { $ref: '#/components/schemas/CotizacionDomoResponse' } }
-        pagina: { type: integer }
-        tamano: { type: integer, example: 10 }
-        totalElementos: { type: integer }
-        totalPaginas: { type: integer }
-
+        correo:
+          type: string
+          format: email
+        contrasena:
+          type: string
+      required:
+      - correo
+      - contrasena
+    SolicitarRecuperacionRequest:
+      type: object
+      properties:
+        correo:
+          type: string
+          format: email
+      required:
+      - correo
+    RestablecerContrasenaRequest:
+      type: object
+      properties:
+        correo:
+          type: string
+          format: email
+        codigo:
+          type: string
+          pattern: ^\d{6}$
+        contrasenaNueva: *id008
+      required:
+      - correo
+      - codigo
+      - contrasenaNueva
+    ActualizarPerfilRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+        telefono:
+          type: string
+        fotoPerfil:
+          type: string
+      required:
+      - nombre
+      - telefono
+    CambiarContrasenaRequest:
+      type: object
+      properties:
+        contrasenaActual:
+          type: string
+        contrasenaNueva: *id008
+      required:
+      - contrasenaActual
+      - contrasenaNueva
+    CrearUsuarioRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+        correo:
+          type: string
+          format: email
+        contrasena: *id008
+        telefono:
+          type: string
+        documento:
+          type: string
+        fechaNacimiento: *id009
+        rol: &id010
+          type: string
+          enum:
+          - HUESPED
+          - RECEPCIONISTA
+          - ADMINISTRADOR
+          - PERSONAL_SERVICIO
+      required:
+      - nombre
+      - correo
+      - contrasena
+      - telefono
+      - documento
+      - fechaNacimiento
+      - rol
+    AsignarRolRequest:
+      type: object
+      properties:
+        rol: *id010
+      required:
+      - rol
+    UsuarioResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        nombre:
+          type: string
+        correo:
+          type: string
+        telefono:
+          type: string
+        documento:
+          type: string
+        fechaNacimiento: *id009
+        rol: *id010
+        fotoPerfil:
+          type: string
+    TokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        tipo:
+          type: string
+          example: Bearer
+        expiraEn: *id011
+        usuario:
+          $ref: '#/components/schemas/UsuarioResponse'
+    PaginaUsuarios:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsuarioResponse'
+        pagina:
+          type: integer
+        tamano:
+          type: integer
+          example: 10
+        totalElementos:
+          type: integer
+        totalPaginas:
+          type: integer
+    ServicioAdicionalResponse:
+      type: object
+      properties:
+        codigo:
+          type: string
+        nombre:
+          type: string
+        valor:
+          type: integer
+        porPersona: &id013
+          type: boolean
+    AlojamientoResponse:
+      type: object
+      properties:
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        ciudad:
+          type: string
+        direccion:
+          type: string
+        latitud:
+          type: string
+        longitud:
+          type: string
+        horaEntrada: &id012
+          type: string
+          example: '18:30'
+        horaSalida: *id012
+        normasConvivencia:
+          type: string
+        umbralEdadFacturable:
+          type: integer
+        tiempoPreparacionHoras:
+          type: integer
+        plazoConfirmacionHoras:
+          type: integer
+        horaLimiteNoShow: *id012
+        anticipoPorcentaje:
+          type: integer
+        deposito:
+          type: integer
+        aceptaMascotas: *id013
+        servicios:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServicioAdicionalResponse'
+    ActualizarAlojamientoRequest:
+      type: object
+      properties:
+        descripcion:
+          type: string
+        direccion:
+          type: string
+        latitud:
+          type: number
+        longitud:
+          type: number
+        normasConvivencia:
+          type: string
+      required:
+      - latitud
+      - longitud
+    ServicioAdicionalRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+        valor:
+          type: integer
+          minimum: 1
+        porPersona: *id013
+      required:
+      - nombre
+      - valor
+    PeriodoRequest:
+      type: object
+      properties:
+        desde: *id009
+        hasta: *id009
+      required:
+      - desde
+      - hasta
+    PeriodoResponse:
+      type: object
+      properties:
+        desde: *id009
+        hasta: *id009
+    TarifaDomoRequest:
+      type: object
+      properties:
+        idDomo:
+          type: string
+        valorPorOcupanteNoche:
+          type: integer
+          minimum: 1
+      required:
+      - idDomo
+      - valorPorOcupanteNoche
+    RegistrarTemporadaRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^[A-Z0-9_]{2,40}$
+          example: PUENTES_2027
+        nombre:
+          type: string
+        periodos:
+          type: array
+          items:
+            $ref: '#/components/schemas/PeriodoRequest'
+        tarifas:
+          type: array
+          items:
+            $ref: '#/components/schemas/TarifaDomoRequest'
+      required:
+      - id
+      - nombre
+      - periodos
+    RedefinirTemporadaRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+        periodos:
+          type: array
+          items:
+            $ref: '#/components/schemas/PeriodoRequest'
+      required:
+      - nombre
+    TemporadaResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        nombre:
+          type: string
+        base: *id013
+        periodos:
+          type: array
+          items:
+            $ref: '#/components/schemas/PeriodoResponse'
+    PaginaTemporadas:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemporadaResponse'
+        pagina:
+          type: integer
+        tamano:
+          type: integer
+          example: 10
+        totalElementos:
+          type: integer
+        totalPaginas:
+          type: integer
+    TramoRetencion:
+      type: object
+      properties:
+        horasAntelacionMinima:
+          type: integer
+          minimum: 0
+        porcentajeRetencion:
+          type: number
+          minimum: 0
+          maximum: 100
+      required:
+      - horasAntelacionMinima
+      - porcentajeRetencion
+    PublicarPoliticaRequest:
+      type: object
+      properties:
+        vigenteDesde: *id009
+        tramos:
+          type: array
+          items:
+            $ref: '#/components/schemas/TramoRetencion'
+          minItems: 2
+        retencionNoShow:
+          type: number
+          minimum: 0
+          maximum: 100
+      required:
+      - vigenteDesde
+      - tramos
+      - retencionNoShow
+    PoliticaCancelacionResponse:
+      type: object
+      properties:
+        version:
+          type: integer
+        vigenteDesde: *id009
+        tramos:
+          type: array
+          items:
+            $ref: '#/components/schemas/TramoRetencion'
+        retencionNoShow:
+          type: number
+    PaginaPoliticas:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoliticaCancelacionResponse'
+        pagina:
+          type: integer
+        tamano:
+          type: integer
+          example: 10
+        totalElementos:
+          type: integer
+        totalPaginas:
+          type: integer
+    TarifaRequest:
+      type: object
+      properties:
+        temporada:
+          type: string
+          example: BASE
+        valorPorOcupanteNoche:
+          type: integer
+          minimum: 1
+      required:
+      - temporada
+      - valorPorOcupanteNoche
+    JacuzziRequest:
+      type: object
+      properties:
+        descripcion:
+          type: string
+        horasPrecalentamiento:
+          type: integer
+          minimum: 1
+      required:
+      - horasPrecalentamiento
+    RegistrarDomoRequest:
+      type: object
+      properties:
+        identificacion:
+          type: string
+          example: DOM-06
+        nombre: &id014
+          type: string
+        descripcion: &id015
+          type: string
+        dormitorios: &id016
+          type: integer
+          minimum: 1
+        capacidad: &id017
+          type: integer
+          minimum: 1
+        caracteristicas: &id018
+          type: array
+          items:
+            type: string
+        jacuzzi: &id019
+          $ref: '#/components/schemas/JacuzziRequest'
+        mallaPesoMaximoKg: &id020
+          type: integer
+        fogataKitsLena: &id021
+          type: integer
+        tarifas:
+          type: array
+          items:
+            $ref: '#/components/schemas/TarifaRequest'
+      required:
+      - identificacion
+      - nombre
+      - dormitorios
+      - capacidad
+    ActualizarDomoRequest:
+      type: object
+      properties:
+        nombre: *id014
+        descripcion: *id015
+        dormitorios: *id016
+        capacidad: *id017
+        caracteristicas: *id018
+        jacuzzi: *id019
+        mallaPesoMaximoKg: *id020
+        fogataKitsLena: *id021
+      required:
+      - nombre
+      - dormitorios
+      - capacidad
+    EstablecerTarifasRequest:
+      type: object
+      properties:
+        tarifas:
+          type: array
+          items:
+            $ref: '#/components/schemas/TarifaRequest'
+      required:
+      - tarifas
     DomoResponse:
       type: object
       properties:
-        idDomo: { type: string }
-        nombre: { type: string }
-        dormitorios: { type: integer }
-        capacidadMaxima: { type: integer }
-        caracteristicas: { type: array, items: { type: string } }
-        tieneJacuzzi: { type: boolean }
-        estadoOperativo: { type: string, enum: [PREPARADO, OCUPADO, PENDIENTE_PREPARACION, EN_PREPARACION, FUERA_DE_SERVICIO] }
-        activo: { type: boolean }
-        tarifasPorTemporada: { type: object, additionalProperties: { type: integer } }
-
+        idDomo:
+          type: string
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        dormitorios:
+          type: integer
+        capacidadMaxima:
+          type: integer
+        caracteristicas:
+          type: array
+          items:
+            type: string
+        tieneJacuzzi: *id013
+        horasPrecalentamientoJacuzzi:
+          type: integer
+        pesoMaximoMallaKg:
+          type: integer
+        kitsFogata:
+          type: integer
+        estadoOperativo:
+          type: string
+          enum:
+          - PREPARADO
+          - OCUPADO
+          - PENDIENTE_PREPARACION
+          - EN_PREPARACION
+          - FUERA_DE_SERVICIO
+        activo: *id013
+        tarifasPorTemporada:
+          type: object
+          additionalProperties:
+            type: integer
+    PaginaDomos:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/DomoResponse'
+        pagina:
+          type: integer
+        tamano:
+          type: integer
+          example: 10
+        totalElementos:
+          type: integer
+        totalPaginas:
+          type: integer
+    ReservaResumenResponse:
+      type: object
+      properties:
+        codigo:
+          type: string
+        estado: &id022
+          type: string
+          enum:
+          - PENDIENTE
+          - CONFIRMADA
+          - EN_CURSO
+          - FINALIZADA
+          - CANCELADA
+          - NO_SHOW
+        canalOrigen: &id023
+          type: string
+          enum:
+          - PORTAL
+          - DIRECTO
+          - EXTERNO
+        idDomo:
+          type: string
+        fechaEntrada: *id009
+        fechaSalida: *id009
+        nombreTitular:
+          type: string
+        totalOcupantes:
+          type: integer
+        valorTotal:
+          type: integer
+    PaginaReservas:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservaResumenResponse'
+        pagina:
+          type: integer
+        tamano:
+          type: integer
+          example: 10
+        totalElementos:
+          type: integer
+        totalPaginas:
+          type: integer
+    DomoActualizadoResponse:
+      type: object
+      properties:
+        domo:
+          $ref: '#/components/schemas/DomoResponse'
+        reservasPorEncimaDeLaCapacidad:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservaResumenResponse'
+        advertencia:
+          type: string
+    RegistroTarifaResponse:
+      type: object
+      properties:
+        temporada:
+          type: string
+        valorPorOcupanteNoche:
+          type: integer
+        reemplazadaEl: *id009
+    NocheCalendarioResponse:
+      type: object
+      properties:
+        fecha: *id009
+        estado:
+          type: string
+          enum:
+          - LIBRE
+          - RESERVADA
+          - BLOQUEADA
+        referencia:
+          type: string
+    RegistrarNovedadRequest:
+      type: object
+      properties:
+        tipo:
+          type: string
+          enum:
+          - DANO
+          - FALTANTE
+          - SITUACION
+        descripcion:
+          type: string
+        gravedad:
+          type: string
+          enum:
+          - LEVE
+          - MODERADA
+          - GRAVE
+      required:
+      - tipo
+      - descripcion
+      - gravedad
+    NovedadResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        idDomo:
+          type: string
+        tipo:
+          type: string
+        descripcion:
+          type: string
+        gravedad:
+          type: string
+        autor:
+          type: string
+        momentoReporte: *id011
+        atendida: *id013
+    PaginaNovedades:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/NovedadResponse'
+        pagina:
+          type: integer
+        tamano:
+          type: integer
+          example: 10
+        totalElementos:
+          type: integer
+        totalPaginas:
+          type: integer
+    RegistrarBloqueoRequest:
+      type: object
+      properties:
+        desde: *id009
+        hasta: *id009
+        motivo:
+          type: string
+          enum:
+          - MANTENIMIENTO
+          - USO_INTERNO
+          - FUERA_DE_SERVICIO
+        observacion:
+          type: string
+      required:
+      - desde
+      - hasta
+      - motivo
+    BloqueoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        idDomo:
+          type: string
+        desde: *id009
+        hasta: *id009
+        motivo:
+          type: string
+        observacion:
+          type: string
+        vigente: *id013
+    PaginaBloqueos:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/BloqueoResponse'
+        pagina:
+          type: integer
+        tamano:
+          type: integer
+          example: 10
+        totalElementos:
+          type: integer
+        totalPaginas:
+          type: integer
+    CotizarEstanciaRequest:
+      type: object
+      properties:
+        fechaEntrada: *id009
+        fechaSalida: *id009
+        fechasNacimiento:
+          type: array
+          items: *id009
+      required:
+      - fechaEntrada
+      - fechaSalida
+      - fechasNacimiento
+    DetalleNocheResponse:
+      type: object
+      properties:
+        fecha: *id009
+        temporada:
+          type: string
+        tarifaPorOcupanteFacturable:
+          type: integer
+        ocupantesFacturables:
+          type: integer
+        recargoPersonaAdicional:
+          type: integer
+        subtotal:
+          type: integer
+    CotizacionDomoResponse:
+      type: object
+      properties:
+        idDomo:
+          type: string
+        nombre:
+          type: string
+        capacidadMaxima:
+          type: integer
+        tieneJacuzzi: *id013
+        caracteristicas:
+          type: array
+          items:
+            type: string
+        noches:
+          type: integer
+        recargoOcupanteAdicional:
+          type: integer
+        valorTotalEstancia:
+          type: integer
+        moneda:
+          type: string
+          example: COP
+        desglose:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleNocheResponse'
+    PaginaCotizaciones:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/CotizacionDomoResponse'
+        pagina:
+          type: integer
+        tamano:
+          type: integer
+          example: 10
+        totalElementos:
+          type: integer
+        totalPaginas:
+          type: integer
+    OcupanteRequest:
+      type: object
+      properties:
+        documento:
+          type: string
+          minLength: 5
+          maxLength: 15
+        nombre:
+          type: string
+        fechaNacimiento: *id009
+      required:
+      - documento
+      - nombre
+      - fechaNacimiento
+    TitularRequest:
+      type: object
+      properties:
+        documento:
+          type: string
+          minLength: 5
+          maxLength: 15
+        nombre:
+          type: string
+        fechaNacimiento: *id009
+        correo:
+          type: string
+          format: email
+        telefono:
+          type: string
+      required:
+      - documento
+      - nombre
+      - fechaNacimiento
+      - correo
+      - telefono
+    CrearReservaRequest:
+      type: object
+      properties:
+        idDomo:
+          type: string
+        fechaEntrada: *id009
+        fechaSalida: *id009
+        canalOrigen:
+          type: string
+          enum:
+          - PORTAL
+          - DIRECTO
+        horaEstimadaLlegada: *id012
+        titular:
+          $ref: '#/components/schemas/TitularRequest'
+        ocupantes:
+          type: array
+          items:
+            $ref: '#/components/schemas/OcupanteRequest'
+      required:
+      - idDomo
+      - fechaEntrada
+      - fechaSalida
+      - canalOrigen
+      - titular
+    ModificarReservaRequest:
+      type: object
+      properties:
+        idDomo:
+          type: string
+        fechaEntrada: *id009
+        fechaSalida: *id009
+        ocupantes:
+          type: array
+          items:
+            $ref: '#/components/schemas/OcupanteRequest'
+          description: Lista completa de acompañantes; el titular se conserva
+    ConfirmarReservaRequest:
+      type: object
+      properties:
+        horaEstimadaLlegada: *id012
+    CancelarReservaRequest:
+      type: object
+      properties:
+        motivo:
+          type: string
+          minLength: 5
+          maxLength: 300
+      required:
+      - motivo
+    RegistrarSalidaRequest:
+      type: object
+      properties:
+        motivoAutorizacion:
+          type: string
+          minLength: 5
+          maxLength: 300
+          description: Solo si el saldo no es cero; exige rol ADMINISTRADOR
+    OcupanteResponse:
+      type: object
+      properties:
+        documento:
+          type: string
+        nombre:
+          type: string
+        fechaNacimiento: *id009
+        facturable: *id013
+    TitularResponse:
+      type: object
+      properties:
+        documento:
+          type: string
+        nombre:
+          type: string
+        correo:
+          type: string
+        telefono:
+          type: string
     ReservaDetalleResponse:
       type: object
       properties:
-        codigo: { type: string, example: "RES-2026-00001" }
-        estado: { type: string, enum: [PENDIENTE, CONFIRMADA, EN_CURSO, FINALIZADA, CANCELADA, NO_SHOW] }
-        canalOrigen: { type: string, enum: [PORTAL, DIRECTO, EXTERNO] }
-        idDomo: { type: string }
-        fechaEntrada: { type: string, format: date }
-        fechaSalida: { type: string, format: date }
-        noches: { type: integer }
-        horaEstimadaLlegada: { type: string }
-        valorTotal: { type: integer }
-        moneda: { type: string }
-        desglose: { type: array, items: { $ref: '#/components/schemas/DetalleNoche' } }
-        versionPoliticaCancelacion: { type: integer }
-
+        codigo:
+          type: string
+          example: RES-2026-00001
+        estado: *id022
+        canalOrigen: *id023
+        canalExterno:
+          type: string
+        idTransaccionExterna:
+          type: string
+        idDomo:
+          type: string
+        fechaEntrada: *id009
+        fechaSalida: *id009
+        noches:
+          type: integer
+        horaEstimadaLlegada: *id012
+        titular:
+          $ref: '#/components/schemas/TitularResponse'
+        ocupantes:
+          type: array
+          items:
+            $ref: '#/components/schemas/OcupanteResponse'
+        totalOcupantes:
+          type: integer
+        valorTotal:
+          type: integer
+        moneda:
+          type: string
+          example: COP
+        desglose:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleNocheResponse'
+        versionPoliticaCancelacion:
+          type: integer
+        momentoCreacion: *id011
+        motivoCancelacion:
+          type: string
+    MovimientosDelDiaResponse:
+      type: object
+      properties:
+        fecha: *id009
+        llegadas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservaResumenResponse'
+        salidas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservaResumenResponse'
+    RegistrarPagoRequest:
+      type: object
+      properties:
+        monto:
+          type: integer
+          minimum: 1
+        medio:
+          type: string
+          enum:
+          - TRANSFERENCIA
+          - TARJETA
+          - EFECTIVO
+        fecha: *id009
+      required:
+      - monto
+      - medio
+    RegistrarServicioRequest:
+      type: object
+      properties:
+        codigoServicio:
+          type: string
+          example: KIT_FOGATA
+        cantidad:
+          type: integer
+          minimum: 1
+      required:
+      - codigoServicio
+      - cantidad
     FolioResponse:
       type: object
       properties:
-        codigoFolio: { type: string }
-        codigoReserva: { type: string }
+        codigoFolio:
+          type: string
+        codigoReserva:
+          type: string
         cargos:
           type: array
           items:
             type: object
             properties:
-              concepto: { type: string, enum: [ALOJAMIENTO, SERVICIO, PENALIDAD, AJUSTE, DEPOSITO] }
-              valor: { type: integer }
-              esInverso: { type: boolean }
-              fecha: { type: string, format: date }
-              descripcion: { type: string }
+              concepto:
+                type: string
+              valor:
+                type: integer
+              esInverso: *id013
+              fecha: *id009
+              descripcion:
+                type: string
         pagos:
           type: array
           items:
             type: object
             properties:
-              idPago: { type: string }
-              monto: { type: integer }
-              medio: { type: string }
-              fecha: { type: string, format: date }
-        totalCargos: { type: integer }
-        totalPagos: { type: integer }
-        saldo: { type: integer, description: "Positivo: debe el huésped. Negativo: saldo a favor." }
-        depositoRegistrado: { type: boolean }
-        cerrado: { type: boolean }
-
-    ErrorRespuesta:
+              idPago:
+                type: string
+              monto:
+                type: integer
+              medio:
+                type: string
+              fecha: *id009
+        totalCargos:
+          type: integer
+        totalPagos:
+          type: integer
+        saldo:
+          type: integer
+          description: '> 0 debe el huésped; < 0 saldo a favor'
+        depositoRegistrado: *id013
+        cerrado: *id013
+        autorizadoPor:
+          type: string
+        motivoAutorizacion:
+          type: string
+    ReservaExternaRequest:
       type: object
       properties:
-        codigoError: { type: string, example: "REGLA_DOMINIO_VIOLADA" }
-        mensaje: { type: string, example: "L-22: el folio no registra el depósito; no se autoriza el ingreso." }
-        detalles: { type: array, items: { type: string } }
+        idTransaccionExterna:
+          type: string
+        idDomo:
+          type: string
+        fechaEntrada: *id009
+        fechaSalida: *id009
+        horaEstimadaLlegada: *id012
+        titular:
+          $ref: '#/components/schemas/TitularRequest'
+        ocupantes:
+          type: array
+          items:
+            $ref: '#/components/schemas/OcupanteRequest'
+      required:
+      - idTransaccionExterna
+      - idDomo
+      - fechaEntrada
+      - fechaSalida
+      - titular
+    ResultadoReservaExternaResponse:
+      type: object
+      properties:
+        resultado:
+          type: string
+          enum:
+          - CREADA
+          - DUPLICADA
+          - CONFLICTO
+        codigoReserva:
+          type: string
+        estado:
+          type: string
+        valorTotal:
+          type: integer
+        mensaje:
+          type: string

@@ -1,0 +1,3371 @@
+{
+  "info": {
+    "name": "SGA - JiyJu Glamping (Entrega 2)",
+    "description": "Colección de pruebas de la API de JiyJu Glamping (Entrega 2). Se ejecuta COMPLETA y en orden (Run collection) contra la aplicación recién arrancada con ./gradlew bootRun: los datos de prueba se cargan solos y la colección guarda tokens, fechas y códigos en variables. Incluye el flujo completo de una reserva, un 409 por cada regla que expone la API, los 401 y 403 y el canal externo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. inicio de sesión",
+      "item": [
+        {
+          "name": "0.1 Administrador (además calcula las fechas de la colección, en hora de Colombia)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"correo\": \"admin@jiyju.co\", \"contrasena\": \"Admin2026\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"login admin 200\", () => assertar(pm.response.code === 200, \"status \" + pm.response.code));",
+                  "pm.collectionVariables.set(\"tokenAdmin\", cuerpo.token);",
+                  "const dia = n => new Date(Date.now() - 5 * 3600 * 1000 + n * 86400000).toISOString().slice(0, 10);",
+                  "pm.collectionVariables.set(\"ayer\", dia(-1));",
+                  "pm.collectionVariables.set(\"hoy\", dia(0));",
+                  "pm.collectionVariables.set(\"manana\", dia(1));",
+                  "for (const n of [20, 21, 22, 23, 30, 31, 60, 61, 62, 70, 71, 72, 73, 75, 76, 77, 80, 81, 82, 90, 92]) {",
+                  "    pm.collectionVariables.set(\"d\" + n, dia(n));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "0.2 Recepcionista",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"correo\": \"recepcion@jiyju.co\", \"contrasena\": \"Recepcion2026\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"login recepción 200\", () => assertar(pm.response.code === 200));",
+                  "pm.collectionVariables.set(\"tokenRecepcion\", cuerpo.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "0.3 Personal de servicio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"correo\": \"servicio@jiyju.co\", \"contrasena\": \"Servicio2026\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"login servicio 200\", () => assertar(pm.response.code === 200));",
+                  "pm.collectionVariables.set(\"tokenServicio\", cuerpo.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "0.4 Huésped 1: Valentina (titular de reservas sembradas)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"correo\": \"valentina.rios@correo.com\", \"contrasena\": \"Huesped2026\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"login Valentina 200\", () => assertar(pm.response.code === 200));",
+                  "pm.collectionVariables.set(\"tokenValentina\", cuerpo.token);",
+                  "pm.collectionVariables.set(\"idValentina\", cuerpo.usuario.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "0.5 Huésped 2: Andrés (para probar la verificación por propietario)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"correo\": \"andres.cardona@correo.com\", \"contrasena\": \"Huesped2026\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"login Andrés 200\", () => assertar(pm.response.code === 200));",
+                  "pm.collectionVariables.set(\"tokenAndres\", cuerpo.token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. seguridad: 401 y 403",
+      "item": [
+        {
+          "name": "1.1 401: contraseña incorrecta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"correo\": \"admin@jiyju.co\", \"contrasena\": \"Equivocada1\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"401 credenciales\", () => assertar(pm.response.code === 401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.2 401: listar reservas sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base}}/reservas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"401 sin token\", () => assertar(pm.response.code === 401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3 401: token inválido",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer token.invalido.123"
+              }
+            ],
+            "url": "{{base}}/usuarios/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"401 token inválido\", () => assertar(pm.response.code === 401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.4 403: un huésped no lista todas las reservas (solo recepción y administración)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenValentina}}"
+              }
+            ],
+            "url": "{{base}}/reservas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"403 huésped lista reservas\", () => assertar(pm.response.code === 403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.5 403: el personal de servicio no gestiona domos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenServicio}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/domos",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"identificacion\": \"DOM-99\", \"nombre\": \"No autorizado\", \"dormitorios\": 1, \"capacidad\": 2 }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"403 servicio crea domo\", () => assertar(pm.response.code === 403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.6 403: el personal de servicio no declara FUERA_DE_SERVICIO (decisión administrativa, 7.1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenServicio}}"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-05/fuera-de-servicio"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"403 servicio fuera de servicio\", () => assertar(pm.response.code === 403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.7 403: la recepción no administra usuarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/usuarios"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"403 recepción usuarios\", () => assertar(pm.response.code === 403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.8 403: un huésped no reserva por el canal DIRECTO",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenValentina}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idDomo\": \"DOM-05\", \"fechaEntrada\": \"{{d90}}\", \"fechaSalida\": \"{{d92}}\", \"canalOrigen\": \"DIRECTO\",\n  \"horaEstimadaLlegada\": \"18:30\",\n  \"titular\": { \"documento\": \"1094000001\", \"nombre\": \"Valentina Ríos\", \"fechaNacimiento\": \"1992-04-10\",\n               \"correo\": \"valentina.rios@correo.com\", \"telefono\": \"3001234567\" } }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"403 huésped canal DIRECTO\", () => assertar(pm.response.code === 403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.9 403: un huésped no reserva a nombre de otra persona",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenValentina}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idDomo\": \"DOM-05\", \"fechaEntrada\": \"{{d90}}\", \"fechaSalida\": \"{{d92}}\", \"canalOrigen\": \"PORTAL\",\n  \"horaEstimadaLlegada\": \"18:30\",\n  \"titular\": { \"documento\": \"1094000004\", \"nombre\": \"Andrés Cardona\", \"fechaNacimiento\": \"1992-04-10\",\n               \"correo\": \"andres.cardona@correo.com\", \"telefono\": \"3001234567\" } }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"403 huésped a nombre de otro\", () => assertar(pm.response.code === 403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. registro y perfil (7.2)",
+      "item": [
+        {
+          "name": "2.1 400: contraseña insegura (sin mayúscula ni número)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/registro",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"nombre\": \"Camila Herrera\", \"correo\": \"camila.nueva@correo.com\", \"contrasena\": \"debil\",\n  \"telefono\": \"3109998877\", \"documento\": \"1094555001\", \"fechaNacimiento\": \"1995-08-21\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"400 contraseña insegura\", () => assertar(pm.response.code === 400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2 Registro público: 201 con Location, rol HUESPED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/registro",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"nombre\": \"Camila Herrera\", \"correo\": \"camila.nueva@correo.com\", \"contrasena\": \"Camila2026\",\n  \"telefono\": \"3109998877\", \"documento\": \"1094555001\", \"fechaNacimiento\": \"1995-08-21\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 registro\", () => {",
+                  "    assertar(pm.response.code === 201, \"status \" + pm.response.code);",
+                  "    assertar(cuerpo.rol === \"HUESPED\");",
+                  "    assertar(pm.response.headers.get(\"Location\") === \"/api/v1/usuarios/me\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.3 409: el correo ya está registrado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/registro",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"nombre\": \"Otra Camila\", \"correo\": \"camila.nueva@correo.com\", \"contrasena\": \"Camila2026\",\n  \"telefono\": \"3109998877\", \"documento\": \"1094555002\", \"fechaNacimiento\": \"1995-08-21\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 correo duplicado\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.4 Login del huésped nuevo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"correo\": \"camila.nueva@correo.com\", \"contrasena\": \"Camila2026\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"login Camila 200\", () => assertar(pm.response.code === 200));",
+                  "pm.collectionVariables.set(\"tokenCamila\", cuerpo.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.5 Mi perfil",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCamila}}"
+              }
+            ],
+            "url": "{{base}}/usuarios/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 perfil\", () => assertar(cuerpo.correo === \"camila.nueva@correo.com\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.6 Actualizar nombre, teléfono y foto (el correo no es editable)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCamila}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/usuarios/me",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"nombre\": \"Camila Herrera Gómez\", \"telefono\": \"3111112233\", \"fotoPerfil\": \"https://imagenes.ejemplo/camila.png\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 perfil actualizado\", () => assertar(cuerpo.nombre === \"Camila Herrera Gómez\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.7 409: cambiar contraseña con la actual equivocada",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCamila}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/usuarios/me/contrasena",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"contrasenaActual\": \"Equivocada1\", \"contrasenaNueva\": \"Camila2027\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 contraseña actual\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.8 Cambiar contraseña",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCamila}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/usuarios/me/contrasena",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"contrasenaActual\": \"Camila2026\", \"contrasenaNueva\": \"Camila2027\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 contraseña cambiada\", () => assertar(pm.response.code === 200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.9 Solicitar código de recuperación (el código llega al correo; en local queda en el log)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/recuperacion",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"correo\": \"camila.nueva@correo.com\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 recuperación\", () => assertar(pm.response.code === 200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.10 409: código de recuperación inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/recuperacion/restablecer",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"correo\": \"camila.nueva@correo.com\", \"codigo\": \"000000\", \"contrasenaNueva\": \"Camila2028\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 código inválido\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. flujo completo de una reserva",
+      "item": [
+        {
+          "name": "3.1 Buscar domos disponibles para hoy, 2 adultos (público, 10 por página)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base}}/domos/disponibles?fechaEntrada={{hoy}}&fechaSalida={{manana}}&fechasNacimiento=1990-05-12,1988-02-01"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 búsqueda\", () => assertar(pm.response.code === 200 && cuerpo.tamano === 10));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.2 Cotizar el DOM-02 con desglose noche por noche (público)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-02/cotizacion",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"fechaEntrada\": \"{{hoy}}\", \"fechaSalida\": \"{{manana}}\", \"fechasNacimiento\": [\"1990-05-12\", \"1988-02-01\"] }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 cotización\", () => assertar(cuerpo.desglose.length === 1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.3 Crear la reserva por recepción (canal DIRECTO): 201, nace PENDIENTE y abre el folio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idDomo\": \"DOM-02\",\n  \"fechaEntrada\": \"{{hoy}}\",\n  \"fechaSalida\": \"{{manana}}\",\n  \"canalOrigen\": \"DIRECTO\",\n  \"horaEstimadaLlegada\": \"18:30\",\n  \"titular\": { \"documento\": \"1094123456\", \"nombre\": \"Ana Ramírez\", \"fechaNacimiento\": \"1990-05-12\",\n               \"correo\": \"ana@correo.com\", \"telefono\": \"3001234567\" },\n  \"ocupantes\": [ { \"documento\": \"1094999888\", \"nombre\": \"Luis Ramírez\", \"fechaNacimiento\": \"1988-02-01\" } ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 reserva\", () => {",
+                  "    assertar(pm.response.code === 201, \"status \" + pm.response.code);",
+                  "    assertar(cuerpo.estado === \"PENDIENTE\");",
+                  "    assertar(pm.response.headers.get(\"Location\") === \"/api/v1/reservas/\" + cuerpo.codigo);",
+                  "});",
+                  "pm.collectionVariables.set(\"codigo\", cuerpo.codigo);",
+                  "pm.collectionVariables.set(\"anticipo\", Math.round(cuerpo.valorTotal * 0.5));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.4 409 (anticipo L-11): confirmar sin el anticipo del 50 %",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigo}}/confirmar"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 sin anticipo\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.5 Registrar el anticipo por transferencia (RN-15): 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigo}}/folio/pagos",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"monto\": {{anticipo}}, \"medio\": \"TRANSFERENCIA\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 pago\", () => assertar(pm.response.code === 201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.6 Confirmar: 200, CONFIRMADA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigo}}/confirmar"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 confirmada\", () => assertar(cuerpo.estado === \"CONFIRMADA\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.7 409 (L-22): check-in sin el depósito en el folio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigo}}/check-in"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 L-22 depósito\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.8 Registrar el depósito (L-22): 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigo}}/folio/deposito"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 depósito\", () => assertar(pm.response.code === 201 && cuerpo.depositoRegistrado));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.9 El administrador declara el DOM-02 FUERA_DE_SERVICIO",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-02/fuera-de-servicio"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 fuera de servicio\", () => assertar(cuerpo.estadoOperativo === \"FUERA_DE_SERVICIO\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.10 409 (RN-11): check-in sobre un domo que no está PREPARADO",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigo}}/check-in"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 RN-11\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.11 El administrador restablece el servicio (FUERA_DE_SERVICIO → PREPARADO)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-02/restablecer-servicio"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 preparado\", () => assertar(cuerpo.estadoOperativo === \"PREPARADO\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.12 Check-in: 200, EN_CURSO",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigo}}/check-in"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 en curso\", () => assertar(cuerpo.estado === \"EN_CURSO\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.13 Cargar un servicio adicional (L-17): kit de fogata",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigo}}/folio/servicios",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"codigoServicio\": \"KIT_FOGATA\", \"cantidad\": 1 }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 servicio\", () => assertar(pm.response.code === 201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.14 Llegadas y salidas previstas del día (7.6)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/movimientos?fecha={{manana}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 movimientos\", () => assertar(pm.response.code === 200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.15 409 (RN-17): check-out con saldo pendiente y sin autorización",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigo}}/check-out"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 RN-17\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.16 403: la recepción no autoriza cerrar un folio con saldo (solo el administrador)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigo}}/check-out",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"motivoAutorizacion\": \"El huésped paga el saldo en efectivo mañana\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"403 autorización recepción\", () => assertar(pm.response.code === 403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.17 Check-out autorizado por el administrador: 200, FINALIZADA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigo}}/check-out",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"motivoAutorizacion\": \"El huésped paga el saldo en efectivo mañana\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 finalizada\", () => assertar(cuerpo.estado === \"FINALIZADA\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.18 Folio cerrado con la autorización registrada (autor y motivo)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigo}}/folio"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 folio cerrado\", () => assertar(cuerpo.cerrado && cuerpo.autorizadoPor === \"admin@jiyju.co\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.19 Personal de servicio: domos pendientes de preparación",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenServicio}}"
+              }
+            ],
+            "url": "{{base}}/domos/pendientes-preparacion"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 pendientes\", () => assertar(cuerpo.contenido.some(d => d.idDomo === \"DOM-02\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.20 PENDIENTE_PREPARACION → EN_PREPARACION",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenServicio}}"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-02/iniciar-preparacion"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 en preparación\", () => assertar(cuerpo.estadoOperativo === \"EN_PREPARACION\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.21 EN_PREPARACION → PREPARADO",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenServicio}}"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-02/marcar-preparado"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 preparado\", () => assertar(cuerpo.estadoOperativo === \"PREPARADO\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.22 Registrar una novedad (autor: el usuario autenticado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenServicio}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-02/novedades",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"tipo\": \"FALTANTE\", \"descripcion\": \"Falta una toalla de jacuzzi\", \"gravedad\": \"LEVE\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 novedad\", () => assertar(pm.response.code === 201 && cuerpo.autor === \"servicio@jiyju.co\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. huésped por el portal y propietario",
+      "item": [
+        {
+          "name": "4.1 Valentina reserva a su nombre por el portal: 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenValentina}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idDomo\": \"DOM-05\",\n  \"fechaEntrada\": \"{{d60}}\",\n  \"fechaSalida\": \"{{d62}}\",\n  \"canalOrigen\": \"PORTAL\",\n  \"horaEstimadaLlegada\": \"18:30\",\n  \"titular\": { \"documento\": \"1094000001\", \"nombre\": \"Valentina Ríos\", \"fechaNacimiento\": \"1992-04-10\",\n               \"correo\": \"valentina.rios@correo.com\", \"telefono\": \"3001234567\" },\n  \"ocupantes\": [\n    { \"documento\": \"1094000019\", \"nombre\": \"Acompañante de Valentina\", \"fechaNacimiento\": \"1994-08-21\" },\n    { \"documento\": \"TI1030998877\", \"nombre\": \"Sofía Ríos\", \"fechaNacimiento\": \"2019-03-02\" }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 reserva portal\", () => assertar(pm.response.code === 201 && cuerpo.canalOrigen === \"PORTAL\"));",
+                  "pm.collectionVariables.set(\"codigoValentina\", cuerpo.codigo);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.2 Mis reservas (solo las de Valentina)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenValentina}}"
+              }
+            ],
+            "url": "{{base}}/reservas/mias"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 mis reservas\", () => assertar(cuerpo.contenido.length >= 2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.3 Valentina ve su reserva",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenValentina}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigoValentina}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 propia\", () => assertar(pm.response.code === 200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.4 403 (propietario): Andrés no puede ver la reserva de Valentina",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAndres}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigoValentina}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"403 reserva ajena\", () => assertar(pm.response.code === 403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.5 403 (propietario): Andrés no puede ver el folio de Valentina",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAndres}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigoValentina}}/folio"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"403 folio ajeno\", () => assertar(pm.response.code === 403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.6 403 (propietario): Andrés no puede cancelar la reserva de Valentina",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAndres}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigoValentina}}/cancelar",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"motivo\": \"Intento de cancelar una reserva ajena\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"403 cancelación ajena\", () => assertar(pm.response.code === 403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.7 Valentina consulta el folio de su reserva",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenValentina}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigoValentina}}/folio"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 folio propio\", () => assertar(pm.response.code === 200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.8 Valentina cancela su propia reserva con la política congelada (RN-13): 200",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenValentina}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigoValentina}}/cancelar",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"motivo\": \"Cambio de planes de viaje\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 cancelada\", () => assertar(cuerpo.estado === \"CANCELADA\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. un 409 por cada regla",
+      "item": [
+        {
+          "name": "5.1 409 (RN-03): la salida no es posterior a la entrada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idDomo\": \"DOM-01\", \"fechaEntrada\": \"{{d70}}\", \"fechaSalida\": \"{{d70}}\", \"canalOrigen\": \"DIRECTO\",\n  \"titular\": { \"documento\": \"1094123456\", \"nombre\": \"Ana Ramírez\", \"fechaNacimiento\": \"1990-05-12\",\n               \"correo\": \"ana@correo.com\", \"telefono\": \"3001234567\" } }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 RN-03\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.2 409 (RN-04): la entrada es anterior a hoy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idDomo\": \"DOM-01\", \"fechaEntrada\": \"{{ayer}}\", \"fechaSalida\": \"{{manana}}\", \"canalOrigen\": \"DIRECTO\",\n  \"titular\": { \"documento\": \"1094123456\", \"nombre\": \"Ana Ramírez\", \"fechaNacimiento\": \"1990-05-12\",\n               \"correo\": \"ana@correo.com\", \"telefono\": \"3001234567\" } }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 RN-04\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.3 409 (RN-02): 3 ocupantes en un domo de capacidad 2 (los menores también cuentan)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idDomo\": \"DOM-01\", \"fechaEntrada\": \"{{d70}}\", \"fechaSalida\": \"{{d72}}\", \"canalOrigen\": \"DIRECTO\",\n  \"titular\": { \"documento\": \"1094123456\", \"nombre\": \"Ana Ramírez\", \"fechaNacimiento\": \"1990-05-12\",\n               \"correo\": \"ana@correo.com\", \"telefono\": \"3001234567\" },\n  \"ocupantes\": [ { \"documento\": \"1094999888\", \"nombre\": \"Luis Ramírez\", \"fechaNacimiento\": \"1988-02-01\" },\n                 { \"documento\": \"TI1030998877\", \"nombre\": \"Sofía Ramírez\", \"fechaNacimiento\": \"2019-03-02\" } ] }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 RN-02\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.4 Reserva base para las siguientes reglas: DOM-01, llegada 16:00 (no deja el precalentamiento de L-21)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idDomo\": \"DOM-01\", \"fechaEntrada\": \"{{d70}}\", \"fechaSalida\": \"{{d72}}\", \"canalOrigen\": \"DIRECTO\",\n  \"horaEstimadaLlegada\": \"16:00\",\n  \"titular\": { \"documento\": \"1094123456\", \"nombre\": \"Ana Ramírez\", \"fechaNacimiento\": \"1990-05-12\",\n               \"correo\": \"ana@correo.com\", \"telefono\": \"3001234567\" },\n  \"ocupantes\": [ { \"documento\": \"1094999888\", \"nombre\": \"Luis Ramírez\", \"fechaNacimiento\": \"1988-02-01\" } ] }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 reserva base\", () => assertar(pm.response.code === 201));",
+                  "pm.collectionVariables.set(\"codigoJacuzzi\", cuerpo.codigo);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.5 409 (RN-01): otra reserva activa sobre las mismas noches del DOM-01",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idDomo\": \"DOM-01\", \"fechaEntrada\": \"{{d71}}\", \"fechaSalida\": \"{{d73}}\", \"canalOrigen\": \"DIRECTO\",\n  \"horaEstimadaLlegada\": \"18:30\",\n  \"titular\": { \"documento\": \"1094555666\", \"nombre\": \"Pedro Ramírez\", \"fechaNacimiento\": \"1960-07-07\",\n               \"correo\": \"pedro@correo.com\", \"telefono\": \"3005556666\" } }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 RN-01\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.6 409 (L-21): confirmar un domo con Jacuzzi sin 3 horas de precalentamiento (llegada 16:00)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigoJacuzzi}}/confirmar"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 L-21\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.7 409 (RN-07 / 7.3): no se bloquean noches que ya tienen reservas activas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-01/bloqueos",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"desde\": \"{{d70}}\", \"hasta\": \"{{d72}}\", \"motivo\": \"MANTENIMIENTO\", \"observacion\": \"Cambio de la malla\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 bloqueo sobre reserva\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.8 Bloqueo en noches libres del DOM-05: 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-05/bloqueos",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"desde\": \"{{d75}}\", \"hasta\": \"{{d77}}\", \"motivo\": \"USO_INTERNO\", \"observacion\": \"Sesión de fotos\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 bloqueo\", () => assertar(pm.response.code === 201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.9 409 (RN-07): reservar noches bloqueadas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idDomo\": \"DOM-05\", \"fechaEntrada\": \"{{d75}}\", \"fechaSalida\": \"{{d76}}\", \"canalOrigen\": \"DIRECTO\",\n  \"horaEstimadaLlegada\": \"18:30\",\n  \"titular\": { \"documento\": \"1094555666\", \"nombre\": \"Pedro Ramírez\", \"fechaNacimiento\": \"1960-07-07\",\n               \"correo\": \"pedro@correo.com\", \"telefono\": \"3005556666\" } }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 RN-07\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.10 Reserva sin hora estimada de llegada (DOM-03): 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idDomo\": \"DOM-03\", \"fechaEntrada\": \"{{d80}}\", \"fechaSalida\": \"{{d82}}\", \"canalOrigen\": \"DIRECTO\",\n  \"titular\": { \"documento\": \"1094555666\", \"nombre\": \"Pedro Ramírez\", \"fechaNacimiento\": \"1960-07-07\",\n               \"correo\": \"pedro@correo.com\", \"telefono\": \"3005556666\" } }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 sin hora\", () => assertar(pm.response.code === 201));",
+                  "pm.collectionVariables.set(\"codigoSinHora\", cuerpo.codigo);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.11 409 (RN-09): confirmar sin hora estimada de llegada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigoSinHora}}/confirmar"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 RN-09\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.12 409 (RN-08): transición inválida (check-out de una reserva PENDIENTE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigoSinHora}}/check-out"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 RN-08\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.13 409 (RN-14): la modificación repite las validaciones (mover al DOM-01 sobre noches ocupadas)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigoSinHora}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idDomo\": \"DOM-01\", \"fechaEntrada\": \"{{d71}}\", \"fechaSalida\": \"{{d72}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 RN-14\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.14 Modificación válida: se recalcula el valor y el folio registra el ajuste (RN-14)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigoSinHora}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"fechaSalida\": \"{{d81}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 modificada\", () => assertar(pm.response.code === 200 && cuerpo.noches === 1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.15 Reserva CONFIRMADA sembrada del DOM-02 (entra en 10 días)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas?estado=CONFIRMADA&idDomo=DOM-02"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 confirmadas\", () => assertar(cuerpo.contenido.length >= 1));",
+                  "pm.collectionVariables.set(\"codigoConfirmada\", cuerpo.contenido[0].codigo);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.16 409 (RN-10): check-in antes de la fecha de entrada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/{{codigoConfirmada}}/check-in"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 RN-10\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.17 409 (7.3): no se retira de la venta un domo con reservas activas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-01/retirar"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 retiro con reservas\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.18 409 (7.4): una temporada nueva sin tarifa para los domos activos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/temporadas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"id\": \"FERIA_CAFE\", \"nombre\": \"Fiestas del café\",\n  \"periodos\": [ { \"desde\": \"2027-08-01\", \"hasta\": \"2027-08-05\" } ] }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 temporada sin tarifas\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.19 409 (7.4): las temporadas no pueden solaparse (choca con Alta de diciembre)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/temporadas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"id\": \"NAVIDAD\", \"nombre\": \"Navidad\",\n  \"periodos\": [ { \"desde\": \"2026-12-20\", \"hasta\": \"2026-12-26\" } ],\n  \"tarifas\": [ { \"idDomo\": \"DOM-01\", \"valorPorOcupanteNoche\": 300000 },\n               { \"idDomo\": \"DOM-02\", \"valorPorOcupanteNoche\": 300000 },\n               { \"idDomo\": \"DOM-03\", \"valorPorOcupanteNoche\": 380000 },\n               { \"idDomo\": \"DOM-04\", \"valorPorOcupanteNoche\": 340000 },\n               { \"idDomo\": \"DOM-05\", \"valorPorOcupanteNoche\": 380000 } ] }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 temporada solapada\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.20 409 (7.2): no se elimina un usuario titular de reservas activas",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{base}}/usuarios/{{idValentina}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 eliminar titular\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.21 404: reserva inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenRecepcion}}"
+              }
+            ],
+            "url": "{{base}}/reservas/RES-1999-99999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"404 reserva\", () => assertar(pm.response.code === 404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. administración",
+      "item": [
+        {
+          "name": "6.1 Registrar un domo con tarifas en todas las temporadas: 201, queda activo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/domos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identificacion\": \"DOM-06\",\n  \"nombre\": \"Domo Mirador\",\n  \"descripcion\": \"Domo con vista al valle del Cocora\",\n  \"dormitorios\": 1,\n  \"capacidad\": 2,\n  \"caracteristicas\": [\"Vista al valle\", \"Malla catamarán\"],\n  \"mallaPesoMaximoKg\": 250,\n  \"tarifas\": [ { \"temporada\": \"BASE\", \"valorPorOcupanteNoche\": 190000 },\n               { \"temporada\": \"ALTA\", \"valorPorOcupanteNoche\": 290000 },\n               { \"temporada\": \"PUENTES\", \"valorPorOcupanteNoche\": 240000 } ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 domo\", () => {",
+                  "    assertar(pm.response.code === 201 && cuerpo.activo === true);",
+                  "    assertar(pm.response.headers.get(\"Location\") === \"/api/v1/domos/DOM-06\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.2 409 (L-04): la identificación del domo es única",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/domos",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"identificacion\": \"DOM-06\", \"nombre\": \"Repetido\", \"dormitorios\": 1, \"capacidad\": 2 }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 L-04\", () => assertar(pm.response.code === 409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.3 Actualizar datos y dotación del domo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-06",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"nombre\": \"Domo Mirador\", \"descripcion\": \"Ahora con jacuzzi\", \"dormitorios\": 1, \"capacidad\": 2,\n  \"caracteristicas\": [\"Vista al valle\", \"Malla catamarán\", \"Jacuzzi\"],\n  \"jacuzzi\": { \"descripcion\": \"Jacuzzi a leña\", \"horasPrecalentamiento\": 3 }, \"mallaPesoMaximoKg\": 250 }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 domo actualizado\", () => assertar(cuerpo.domo.tieneJacuzzi === true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.4 Cambiar una tarifa: el valor anterior pasa al histórico",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-06/tarifas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"tarifas\": [ { \"temporada\": \"BASE\", \"valorPorOcupanteNoche\": 200000 } ] }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 tarifas\", () => assertar(cuerpo.tarifasPorTemporada.BASE === 200000));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.5 Histórico de tarifas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{base}}/domos/DOM-06/tarifas/historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 historial\", () => assertar(cuerpo.length === 1 && cuerpo[0].valorPorOcupanteNoche === 190000));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.6 Inventario completo del administrador",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{base}}/domos/inventario"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 inventario\", () => assertar(cuerpo.totalElementos === 6));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.7 Calendario de ocupación del DOM-01 (público)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base}}/domos/DOM-01/calendario?desde={{d70}}&hasta={{d73}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 calendario\", () => assertar(cuerpo[0].estado === \"RESERVADA\" && cuerpo[3].estado === \"LIBRE\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.8 Registrar una temporada con la tarifa de todos los domos activos: 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/temporadas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"id\": \"FERIA_CAFE\", \"nombre\": \"Fiestas del café\",\n  \"periodos\": [ { \"desde\": \"2027-08-01\", \"hasta\": \"2027-08-05\" } ],\n  \"tarifas\": [ { \"idDomo\": \"DOM-01\", \"valorPorOcupanteNoche\": 210000 },\n               { \"idDomo\": \"DOM-02\", \"valorPorOcupanteNoche\": 210000 },\n               { \"idDomo\": \"DOM-03\", \"valorPorOcupanteNoche\": 290000 },\n               { \"idDomo\": \"DOM-04\", \"valorPorOcupanteNoche\": 250000 },\n               { \"idDomo\": \"DOM-05\", \"valorPorOcupanteNoche\": 290000 },\n               { \"idDomo\": \"DOM-06\", \"valorPorOcupanteNoche\": 220000 } ] }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 temporada\", () => assertar(pm.response.code === 201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.9 Temporadas (público)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base}}/temporadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 temporadas\", () => assertar(cuerpo.totalElementos === 4));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.10 Publicar una nueva versión de la política: la anterior se conserva",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/politica-cancelacion/versiones",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"vigenteDesde\": \"2027-01-01\", \"retencionNoShow\": 100,\n  \"tramos\": [ { \"horasAntelacionMinima\": 360, \"porcentajeRetencion\": 15 },\n              { \"horasAntelacionMinima\": 120, \"porcentajeRetencion\": 50 },\n              { \"horasAntelacionMinima\": 0, \"porcentajeRetencion\": 100 } ] }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 política v2\", () => assertar(pm.response.code === 201 && cuerpo.version === 2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.11 Historial de versiones de la política",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{base}}/politica-cancelacion/versiones"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 versiones\", () => assertar(cuerpo.totalElementos === 2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.12 Actualizar datos del alojamiento",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/alojamiento",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"descripcion\": \"Eco-glamping de montaña en Salento, Quindío.\", \"direccion\": \"Vereda Palestina, Salento\",\n  \"latitud\": 4.6378, \"longitud\": -75.5703,\n  \"normasConvivencia\": \"Silencio desde las 10:00 pm. No se permiten mascotas. Prohibido fumar dentro de los domos.\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 alojamiento\", () => assertar(pm.response.code === 200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.13 Definir un servicio adicional nuevo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/alojamiento/servicios/AVISTAMIENTO_AVES",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"nombre\": \"Recorrido de avistamiento de aves\", \"valor\": 45000, \"porPersona\": true }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 servicio\", () => assertar(cuerpo.servicios.some(s => s.codigo === \"AVISTAMIENTO_AVES\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.14 Crear un usuario interno con rol (solo el administrador)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/usuarios",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"nombre\": \"Julián Ospina\", \"correo\": \"julian.recepcion@jiyju.co\", \"contrasena\": \"Julian2026\",\n  \"telefono\": \"3104445566\", \"documento\": \"1000000010\", \"fechaNacimiento\": \"1993-02-14\", \"rol\": \"RECEPCIONISTA\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 usuario\", () => assertar(pm.response.code === 201));",
+                  "pm.collectionVariables.set(\"idJulian\", cuerpo.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.15 Cambiar su rol",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/usuarios/{{idJulian}}/rol",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"rol\": \"PERSONAL_SERVICIO\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 rol\", () => assertar(cuerpo.rol === \"PERSONAL_SERVICIO\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.16 Eliminarlo (eliminación lógica)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{base}}/usuarios/{{idJulian}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 eliminado\", () => assertar(pm.response.code === 200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.17 Un usuario eliminado ya no inicia sesión (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"correo\": \"julian.recepcion@jiyju.co\", \"contrasena\": \"Julian2026\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"401 eliminado\", () => assertar(pm.response.code === 401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.18 Listado de usuarios (10 por página)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{base}}/usuarios"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 usuarios\", () => assertar(cuerpo.tamano === 10));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. canal externo (10.3.1)",
+      "item": [
+        {
+          "name": "7.1 401: credencial del canal inválida",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Canal-Id",
+                "value": "{{canal}}"
+              },
+              {
+                "key": "X-Canal-Credencial",
+                "value": "clave-equivocada"
+              }
+            ],
+            "url": "{{base}}/canales/externo/disponibilidad?fechaEntrada={{d20}}&fechaSalida={{d22}}&fechasNacimiento=1990-01-01"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"401 canal\", () => assertar(pm.response.code === 401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.2 Disponibilidad para el canal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Canal-Id",
+                "value": "{{canal}}"
+              },
+              {
+                "key": "X-Canal-Credencial",
+                "value": "{{claveCanal}}"
+              }
+            ],
+            "url": "{{base}}/canales/externo/disponibilidad?fechaEntrada={{d90}}&fechaSalida={{d92}}&fechasNacimiento=1990-01-01,1992-05-05"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 disponibilidad canal\", () => assertar(pm.response.code === 200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.3 Reserva externa ACEPTADA: 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Canal-Id",
+                "value": "{{canal}}"
+              },
+              {
+                "key": "X-Canal-Credencial",
+                "value": "{{claveCanal}}"
+              }
+            ],
+            "url": "{{base}}/canales/externo/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idTransaccionExterna\": \"EXT-5001\", \"idDomo\": \"DOM-04\", \"fechaEntrada\": \"{{d90}}\", \"fechaSalida\": \"{{d92}}\",\n  \"horaEstimadaLlegada\": \"19:00\",\n  \"titular\": { \"documento\": \"1094777001\", \"nombre\": \"Mariana Ospina\", \"fechaNacimiento\": \"1991-03-14\",\n               \"correo\": \"mariana@correo.com\", \"telefono\": \"3105550001\" } }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"201 externa\", () => assertar(pm.response.code === 201 && cuerpo.resultado === \"CREADA\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.4 Mensaje REPETIDO (RN-19): 200, no duplica",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Canal-Id",
+                "value": "{{canal}}"
+              },
+              {
+                "key": "X-Canal-Credencial",
+                "value": "{{claveCanal}}"
+              }
+            ],
+            "url": "{{base}}/canales/externo/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idTransaccionExterna\": \"EXT-5001\", \"idDomo\": \"DOM-04\", \"fechaEntrada\": \"{{d90}}\", \"fechaSalida\": \"{{d92}}\",\n  \"horaEstimadaLlegada\": \"19:00\",\n  \"titular\": { \"documento\": \"1094777001\", \"nombre\": \"Mariana Ospina\", \"fechaNacimiento\": \"1991-03-14\",\n               \"correo\": \"mariana@correo.com\", \"telefono\": \"3105550001\" } }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 repetida\", () => assertar(pm.response.code === 200 && cuerpo.resultado === \"DUPLICADA\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.5 409 (RN-18): reserva externa en CONFLICTO, se rechaza y queda registrada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Canal-Id",
+                "value": "{{canal}}"
+              },
+              {
+                "key": "X-Canal-Credencial",
+                "value": "{{claveCanal}}"
+              }
+            ],
+            "url": "{{base}}/canales/externo/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"idTransaccionExterna\": \"EXT-5002\", \"idDomo\": \"DOM-04\", \"fechaEntrada\": \"{{d90}}\", \"fechaSalida\": \"{{d92}}\",\n  \"titular\": { \"documento\": \"1094777003\", \"nombre\": \"Felipe Cano\", \"fechaNacimiento\": \"1985-07-20\",\n               \"correo\": \"felipe@correo.com\", \"telefono\": \"3105550003\" } }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"409 RN-18\", () => assertar(pm.response.code === 409 && cuerpo.resultado === \"CONFLICTO\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.6 El administrador revisa los conflictos de canal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{base}}/canales/conflictos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 conflictos\", () => assertar(cuerpo.totalElementos >= 2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.7 Cancelar la reserva externa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Canal-Id",
+                "value": "{{canal}}"
+              },
+              {
+                "key": "X-Canal-Credencial",
+                "value": "{{claveCanal}}"
+              }
+            ],
+            "url": "{{base}}/canales/externo/reservas/EXT-5001/cancelar",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"motivo\": \"El huésped canceló en la plataforma\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = (() => { try { return pm.response.json(); } catch (e) { return {}; } })();",
+                  "const assertar = (condicion, mensaje) => pm.expect(condicion, mensaje || \"verificación\").to.be.true;",
+                  "pm.test(\"200 externa cancelada\", () => assertar(cuerpo.estado === \"CANCELADA\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "canal",
+      "value": "BOOKING_COM"
+    },
+    {
+      "key": "claveCanal",
+      "value": "clave-local-booking"
+    }
+  ]
+}
