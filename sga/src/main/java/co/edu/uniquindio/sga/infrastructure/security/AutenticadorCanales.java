@@ -1,10 +1,10 @@
-package co.edu.uniquindio.sga.infraestructure.security;
+package co.edu.uniquindio.sga.infrastructure.security;
 
-import co.edu.uniquindio.sga.infraestructure.config.SgaProperties;
+import co.edu.uniquindio.sga.infrastructure.config.SgaProperties;
 import org.springframework.stereotype.Component;
 
-import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Map;
 
 /**
