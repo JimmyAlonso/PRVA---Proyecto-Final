@@ -17,26 +17,43 @@ repositories {
 	mavenCentral()
 }
 
+ext {
+	mapstructVersion = '1.6.3'
+	jjwtVersion = '0.12.6'
+}
+
 dependencies {
+	// --- Web, validación y persistencia H2 (Guía 03) ---
 	implementation 'org.springframework.boot:spring-boot-h2console'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	implementation 'org.mapstruct:mapstruct:1.6.3'
 
-	compileOnly 'org.projectlombok:lombok'
+	// --- Seguridad: Spring Security + JWT (Guía 12) ---
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
+	runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
+	runtimeOnly "io.jsonwebtoken:jjwt-gson:${jjwtVersion}"
+
+	// --- MapStruct: mapeo DTO ↔ dominio (Guía 08) ---
+	implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+	annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
+	// --- OpenAPI / Swagger UI (Guía 08) ---
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
 
 	runtimeOnly 'com.h2database:h2'
-
-	annotationProcessor 'org.projectlombok:lombok'
-	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-	testCompileOnly 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+tasks.withType(JavaCompile).configureEach {
+	// MapStruct: los mappers generados se registran como beans de Spring
+	options.compilerArgs += ['-Amapstruct.defaultComponentModel=spring']
 }
 
 tasks.named('test') {

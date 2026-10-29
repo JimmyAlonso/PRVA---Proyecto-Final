@@ -35,3 +35,9 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Datos locales y secretos (I-06: ningún secreto se versiona) ###
+data/
+*.mv.db
+*.trace.db
+.env
