@@ -1,4 +1,4 @@
-package co.edu.uniquindio.sga.infraestructure.scheduling;
+package co.edu.uniquindio.sga.infrastructure.scheduling;
 
 import co.edu.uniquindio.sga.application.usecase.VencerReservasPendientesUseCase;
 import org.springframework.scheduling.annotation.Scheduled;

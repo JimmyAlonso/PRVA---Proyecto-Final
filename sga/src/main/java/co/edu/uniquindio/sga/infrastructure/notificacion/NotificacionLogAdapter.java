@@ -1,7 +1,9 @@
-package co.edu.uniquindio.sga.infraestructure.notificacion;
+package co.edu.uniquindio.sga.infrastructure.notificacion;
 
 import co.edu.uniquindio.sga.domain.entity.Reserva;
 import co.edu.uniquindio.sga.domain.port.NotificacionService;
+import co.edu.uniquindio.sga.domain.valueobject.Correo;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,6 +19,7 @@ import java.util.logging.Logger;
  *
  * <p>I-04 / I-05: cualquier fallo se captura y se registra; nunca se propaga al caso de uso.
  */
+@Component
 public class NotificacionLogAdapter implements NotificacionService {
 
     private static final Logger LOG = Logger.getLogger(NotificacionLogAdapter.class.getName());
@@ -41,9 +44,22 @@ public class NotificacionLogAdapter implements NotificacionService {
                 + reserva.getMotivoCancelacion());
     }
 
+    @Override
+    public void codigoRecuperacion(Correo destinatario, String codigo, int minutosVigencia) {
+        registrar("Para " + destinatario.valor() + ": su código de recuperación es " + codigo
+                + " y vence en " + minutosVigencia + " minutos. Es de un solo uso.");
+    }
+
     private void enviar(Reserva reserva, String mensaje) {
         try {
-            String linea = "Para " + reserva.getTitular().getCorreo() + ": " + mensaje;
+            registrar("Para " + reserva.getTitular().getCorreo() + ": " + mensaje);
+        } catch (RuntimeException fallo) {
+            LOG.log(Level.WARNING, "No se pudo registrar la notificación; la operación continúa.", fallo);
+        }
+    }
+
+    private void registrar(String linea) {
+        try {
             enviados.add(linea);
             LOG.info("[Notificación simulada] " + linea);
         } catch (RuntimeException fallo) {

@@ -1,4 +1,4 @@
-package co.edu.uniquindio.sga.infraestructure.rest;
+package co.edu.uniquindio.sga.infrastructure.rest;
 
 import co.edu.uniquindio.sga.application.dto.Pagina;
 import co.edu.uniquindio.sga.application.dto.request.CancelarReservaRequest;
@@ -16,12 +16,12 @@ import co.edu.uniquindio.sga.domain.valueobject.DatosReservaExterna;
 import co.edu.uniquindio.sga.domain.valueobject.Estancia;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificacionDomo;
 import co.edu.uniquindio.sga.domain.valueobject.IdentificadorExterno;
-import co.edu.uniquindio.sga.infraestructure.rest.mapper.OperacionMapper;
-import co.edu.uniquindio.sga.infraestructure.rest.mapper.ReservaMapper;
-import co.edu.uniquindio.sga.infraestructure.security.AutenticadorCanales;
+import co.edu.uniquindio.sga.infrastructure.rest.mapper.DomoRestMapper;
+import co.edu.uniquindio.sga.infrastructure.rest.mapper.ReservaRestMapper;
+import co.edu.uniquindio.sga.infrastructure.security.AutenticadorCanales;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,20 +49,20 @@ public class CanalExternoController {
     private final BuscarDomosDisponiblesUseCase buscarDisponiblesUseCase;
     private final OperarDomoUseCase operarDomoUseCase;
     private final AutenticadorCanales autenticador;
-    private final ReservaMapper reservaMapper;
-    private final OperacionMapper operacionMapper;
+    private final ReservaRestMapper reservaMapper;
+    private final DomoRestMapper domoMapper;
     private final Clock reloj;
 
     public CanalExternoController(CanalExternoUseCase canalExternoUseCase,
                                   BuscarDomosDisponiblesUseCase buscarDisponiblesUseCase,
                                   OperarDomoUseCase operarDomoUseCase, AutenticadorCanales autenticador,
-                                  ReservaMapper reservaMapper, OperacionMapper operacionMapper, Clock reloj) {
+                                  ReservaRestMapper reservaMapper, DomoRestMapper domoMapper, Clock reloj) {
         this.canalExternoUseCase = canalExternoUseCase;
         this.buscarDisponiblesUseCase = buscarDisponiblesUseCase;
         this.operarDomoUseCase = operarDomoUseCase;
         this.autenticador = autenticador;
         this.reservaMapper = reservaMapper;
-        this.operacionMapper = operacionMapper;
+        this.domoMapper = domoMapper;
         this.reloj = reloj;
     }
 
@@ -121,8 +121,8 @@ public class CanalExternoController {
 
     // 7.1 Administrador: revisar los conflictos de canal registrados
     @GetMapping("/conflictos")
-    public ResponseEntity<List<NovedadResponse>> conflictos() {
-        return ResponseEntity.ok(operarDomoUseCase.conflictosDeCanal().stream().map(operacionMapper::aNovedad).toList());
+    public ResponseEntity<Pagina<NovedadResponse>> conflictos(@RequestParam(defaultValue = "0") int pagina) {
+        return ResponseEntity.ok(operarDomoUseCase.conflictosDeCanal(pagina).mapear(domoMapper::aNovedad));
     }
 
     private ResultadoReservaExternaResponse respuesta(ResultadoConciliacion resultado, String mensaje) {
