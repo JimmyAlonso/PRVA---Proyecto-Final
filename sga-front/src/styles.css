@@ -2217,3 +2217,61 @@ main:has(.banda-montana) + .pie {
   border-color: var(--fogata);
   box-shadow: 0 0 0 3px rgba(232, 151, 58, 0.25);
 }
+
+/* Usuarios (administración) */
+.usuarios {
+  display: grid;
+  grid-template-columns: 400px minmax(0, 1fr);
+  gap: 3rem;
+  align-items: start;
+}
+
+.usuarios h2 {
+  margin-top: 0;
+}
+
+.usuarios__nuevo {
+  margin: 0;
+  background: var(--marfil);
+  border: 1px solid var(--palma);
+  border-radius: 24px;
+  padding: 1.5rem;
+}
+
+.lista-usuarios {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--palma);
+}
+
+.lista-usuarios li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px 150px;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--palma);
+}
+
+.lista-usuarios small {
+  display: block;
+  color: var(--musgo);
+  overflow-wrap: anywhere;
+}
+
+.lista-usuarios__confirmar {
+  display: flex;
+  gap: 0.3rem;
+}
+
+@media (max-width: 960px) {
+  .usuarios {
+    grid-template-columns: 1fr;
+  }
+
+  .lista-usuarios li {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}

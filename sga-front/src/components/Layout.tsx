@@ -46,6 +46,7 @@ export function Layout() {
             {tieneRol('HUESPED') && <NavLink to="/mis-reservas">Mis reservas</NavLink>}
             {tieneRol('RECEPCIONISTA', 'ADMINISTRADOR') && <NavLink to="/panel">Recepción</NavLink>}
             {tieneRol('PERSONAL_SERVICIO', 'ADMINISTRADOR') && <NavLink to="/preparacion">Preparación</NavLink>}
+            {tieneRol('ADMINISTRADOR') && <NavLink to="/usuarios">Usuarios</NavLink>}
             {usuario ? (
               <div className="navegacion__usuario">
                 <span className="navegacion__nombre">
