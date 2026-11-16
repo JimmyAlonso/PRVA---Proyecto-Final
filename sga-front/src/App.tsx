@@ -12,6 +12,7 @@ import Panel from './pages/Panel';
 import Preparacion from './pages/Preparacion';
 import Registro from './pages/Registro';
 import Reservar from './pages/Reservar';
+import Usuarios from './pages/Usuarios';
 import ReservaDetalle from './pages/ReservaDetalle';
 
 export default function App() {
@@ -61,6 +62,14 @@ export default function App() {
           element={
             <Protegida roles={['PERSONAL_SERVICIO', 'ADMINISTRADOR']}>
               <Preparacion />
+            </Protegida>
+          }
+        />
+        <Route
+          path="usuarios"
+          element={
+            <Protegida roles={['ADMINISTRADOR']}>
+              <Usuarios />
             </Protegida>
           }
         />
