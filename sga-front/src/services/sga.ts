@@ -2,7 +2,7 @@ import { api } from './api';
 import type {
   Alojamiento, Cotizacion, CrearReservaRequest, Domo, EstadoReserva, Folio, MedioPago, Movimientos,
   NocheCalendario, Pagina, Politica, RegistroRequest, ReservaDetalle, ReservaResumen, Temporada, TokenResponse,
-  Usuario,
+  Rol, Usuario,
 } from './types';
 
 // --- Público
@@ -101,3 +101,19 @@ export const pendientesPreparacion = () =>
   api.get<Pagina<Domo>>('/domos/pendientes-preparacion', { params: { pagina: 0 } }).then((r) => r.data);
 export const iniciarPreparacion = (id: string) => api.post<Domo>(`/domos/${id}/iniciar-preparacion`).then((r) => r.data);
 export const marcarPreparado = (id: string) => api.post<Domo>(`/domos/${id}/marcar-preparado`).then((r) => r.data);
+
+// --- Administración de usuarios (solo ADMINISTRADOR)
+export interface CrearUsuarioRequest {
+  nombre: string;
+  correo: string;
+  contrasena: string;
+  telefono: string;
+  documento: string;
+  fechaNacimiento: string;
+  rol: Rol;
+}
+export const listarUsuarios = (pagina = 0) =>
+  api.get<Pagina<Usuario>>('/usuarios', { params: { pagina } }).then((r) => r.data);
+export const crearUsuario = (datos: CrearUsuarioRequest) => api.post<Usuario>('/usuarios', datos).then((r) => r.data);
+export const asignarRol = (id: string, rol: Rol) => api.put<Usuario>(`/usuarios/${id}/rol`, { rol }).then((r) => r.data);
+export const eliminarUsuario = (id: string) => api.delete(`/usuarios/${id}`).then((r) => r.data);
