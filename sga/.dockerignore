@@ -1,0 +1,15 @@
+build/
+.gradle/
+.idea/
+.vscode/
+*.iml
+out/
+bin/
+HELP.md
+data/
+*.mv.db
+*.trace.db
+.env
+.env.*
+src/main/resources/application-secrets.properties
+src/main/resources/application-local.properties

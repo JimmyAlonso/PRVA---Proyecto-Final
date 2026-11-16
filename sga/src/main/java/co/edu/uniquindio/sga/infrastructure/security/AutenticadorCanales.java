@@ -31,6 +31,10 @@ public class AutenticadorCanales {
                 .map(Map.Entry::getValue)
                 .findFirst()
                 .orElseThrow(CredencialCanalInvalidaException::new);
+        // Un canal sin credencial configurada (p. ej. en producción sin SGA_CANAL_BOOKING_CLAVE) queda cerrado
+        if (esperada == null || esperada.isBlank()) {
+            throw new CredencialCanalInvalidaException();
+        }
         // Comparación en tiempo constante para no filtrar información por tiempos de respuesta
         if (!MessageDigest.isEqual(esperada.getBytes(StandardCharsets.UTF_8),
                 credencial.getBytes(StandardCharsets.UTF_8))) {
