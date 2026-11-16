@@ -3,7 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Aviso, Cargando } from '../components/Comunes';
 import { Buscador } from '../components/Domos';
 import { dinero, hoyIso, noches, rango, sumarDias } from '../components/formato';
-import { RetratoDomo } from '../components/Ilustraciones';
+import { FotoDomo } from '../components/Fotos';
+import { CabeceraFoto, FOTOS } from '../components/Fotos';
 import { mensajeDeError } from '../services/api';
 import { buscarDisponibles } from '../services/sga';
 import type { Cotizacion } from '../services/types';
@@ -29,11 +30,13 @@ export default function Buscar() {
   const n = noches(entrada, salida);
 
   return (
-    <section className="contenedor pagina">
-      <h1>Domos libres</h1>
-      <p className="texto-amplio">
+    <>
+    <CabeceraFoto id={FOTOS.cocoraPalmas} alt="Palmas de cera contra el cielo azul" titulo="Domos libres">
+      <p>
         {rango(entrada, salida)}, {n} {n === 1 ? 'noche' : 'noches'} para {personas} {personas === 1 ? 'persona' : 'personas'}.
       </p>
+    </CabeceraFoto>
+    <section className="contenedor pagina">
       <Buscador compacto inicial={{ entrada, salida, personas }} />
       <label className="interruptor">
         <input type="checkbox" checked={conJacuzzi} onChange={(e) => setConJacuzzi(e.target.checked)} />
@@ -52,13 +55,7 @@ export default function Buscar() {
         <ul className="resultados">
           {resultados.map((c) => (
             <li key={c.idDomo} className="resultado">
-              <RetratoDomo
-                id={c.idDomo}
-                jacuzzi={c.tieneJacuzzi}
-                malla={c.caracteristicas.some((x) => x.toLowerCase().includes('malla'))}
-                fogata={c.caracteristicas.some((x) => x.toLowerCase().includes('fogata'))}
-                proyector={c.caracteristicas.some((x) => x.toLowerCase().includes('proyector'))}
-              />
+              <FotoDomo idDomo={c.idDomo} ancho={520} className="foto-domo resultado__foto" />
               <div className="resultado__cuerpo">
                 <h2>
                   {c.nombre} <span className="codigo">{c.idDomo}</span>
@@ -85,5 +82,6 @@ export default function Buscar() {
         </ul>
       )}
     </section>
+    </>
   );
 }

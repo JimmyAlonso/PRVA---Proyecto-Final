@@ -3,9 +3,8 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useSesion } from '../auth/AuthContext';
 import { Aviso, Cargando } from '../components/Comunes';
 import { grupoComoFechas } from '../components/Cotizador';
-import { dotacion } from '../components/Domos';
 import { dinero, hora12, hoyIso, noches, rango, sumarDias } from '../components/formato';
-import { RetratoDomo } from '../components/Ilustraciones';
+import { FotoDomo } from '../components/Fotos';
 import { mensajeDeError } from '../services/api';
 import { cotizar, crearReserva, obtenerAlojamiento, obtenerDomo } from '../services/sga';
 import type { Alojamiento, Cotizacion, Domo, Ocupante } from '../services/types';
@@ -202,7 +201,7 @@ export default function Reservar() {
 
         {domo && (
           <aside className="resumen-reserva">
-            <RetratoDomo id={domo.idDomo} {...dotacion(domo)} />
+            <FotoDomo idDomo={domo.idDomo} ancho={720} />
             <h2>{domo.nombre}</h2>
             <p>{rango(entrada, salida)}, {n} {n === 1 ? 'noche' : 'noches'}</p>
             <p>{totalPersonas} {totalPersonas === 1 ? 'persona' : 'personas'}</p>

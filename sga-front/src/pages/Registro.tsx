@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../auth/AuthContext';
 import { Aviso } from '../components/Comunes';
+import { FOTOS, Foto } from '../components/Fotos';
 import { hoyIso } from '../components/formato';
 import { mensajeDeError } from '../services/api';
 import { registrarse } from '../services/sga';
@@ -45,7 +46,8 @@ export default function Registro() {
   };
 
   return (
-    <section className="contenedor pagina-estrecha">
+    <section className="acceso">
+      <div className="acceso__formulario">
       <h1>Crea tu cuenta</h1>
       <p className="texto-suave">Con tu cuenta reservas en línea y consultas el estado de tus reservas.</p>
       <form className="formulario" onSubmit={enviar}>
@@ -88,6 +90,11 @@ export default function Registro() {
       <p className="texto-suave">
         ¿Ya tienes cuenta? <Link to="/ingresar" state={{ volverA }}>Ingresa</Link>
       </p>
+      </div>
+      <div className="acceso__foto">
+        <Foto id={FOTOS.fogataAmigos} alt="Amigos alrededor de una fogata en el bosque" ancho={1100} alto={1400} eager />
+        <p>Tu próxima fogata empieza aquí.</p>
+      </div>
     </section>
   );
 }

@@ -413,28 +413,51 @@ svg {
   isolation: isolate;
 }
 
-.paisaje {
+.portada__foto,
+.portada__foto img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  z-index: -2;
+}
+
+.portada__foto img {
+  object-fit: cover;
+  object-position: center 40%;
+  animation: acercar 22s ease-out both;
+}
+
+@keyframes acercar {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+
+.portada::after {
+  content: '';
+  position: absolute;
+  inset: 0;
   z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(9, 28, 24, 0.82) 0%, rgba(9, 28, 24, 0.45) 45%, rgba(9, 28, 24, 0.05) 75%),
+    linear-gradient(0deg, rgba(9, 28, 24, 0.7) 0%, rgba(9, 28, 24, 0) 45%),
+    linear-gradient(180deg, rgba(9, 28, 24, 0.55) 0%, rgba(9, 28, 24, 0) 22%);
 }
 
-.paisaje .palma {
-  transform-box: fill-box;
-  transform-origin: bottom center;
-  animation: brisa 9s ease-in-out infinite alternate;
+.portada__lugar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--palma);
+  margin-bottom: 1rem;
 }
 
-.paisaje .palma:nth-of-type(2n) {
-  animation-duration: 11s;
-  animation-delay: -3s;
-}
-
-@keyframes brisa {
-  from { transform: rotate(-0.8deg); }
-  to { transform: rotate(0.9deg); }
+.portada__lugar::before {
+  content: '';
+  width: 28px;
+  height: 2px;
+  background: var(--fogata);
 }
 
 .portada__contenido {
@@ -1739,4 +1762,420 @@ main:has(.pagina-estrecha) + .pie {
 .banda-montana + .pie,
 main:has(.banda-montana) + .pie {
   border-top: 1px solid rgba(201, 214, 194, 0.15);
+}
+
+
+/* ---------------------------------------------------------------- fotografías */
+
+.foto-domo {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: var(--arco);
+  background: var(--neblina-2);
+}
+
+.tarjeta-domo__marco {
+  position: relative;
+}
+
+.tarjeta-domo__enlace .foto-domo {
+  transition: transform 0.35s ease, filter 0.35s ease;
+}
+
+.tarjeta-domo__enlace:hover .foto-domo {
+  transform: translateY(-4px);
+  filter: saturate(1.1);
+}
+
+.sello {
+  position: absolute;
+  left: 50%;
+  bottom: 0.8rem;
+  transform: translateX(-50%);
+  background: rgba(248, 245, 236, 0.92);
+  color: var(--bosque);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Bienvenida */
+.bienvenida {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.bienvenida h2 {
+  margin-top: 0;
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+}
+
+.bienvenida__fotos {
+  position: relative;
+  min-height: 460px;
+}
+
+.bienvenida__fotos img {
+  position: absolute;
+  object-fit: cover;
+  box-shadow: 0 30px 50px -25px rgba(9, 28, 24, 0.55);
+}
+
+.bienvenida__alta {
+  width: 58%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  border-radius: var(--arco);
+}
+
+.bienvenida__baja {
+  width: 48%;
+  aspect-ratio: 1;
+  right: 0;
+  bottom: -1.5rem;
+  border-radius: 50%;
+  border: 8px solid var(--neblina);
+}
+
+@media (max-width: 860px) {
+  .bienvenida {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .bienvenida__fotos {
+    min-height: 360px;
+  }
+}
+
+/* Una noche: secuencia horaria */
+.noche {
+  background: var(--marfil);
+  padding: 4.5rem 0;
+}
+
+.noche h2 {
+  margin-top: 0;
+}
+
+.noche__linea {
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.75rem;
+  position: relative;
+}
+
+.momento__foto {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 18px;
+}
+
+.momento:nth-child(even) .momento__foto {
+  border-radius: var(--arco);
+}
+
+.momento__hora {
+  display: inline-block;
+  margin: 1rem 0 0.35rem;
+  font-family: var(--fuente-titulo);
+  font-weight: 700;
+  color: var(--fogata-oscura);
+}
+
+.momento h3 {
+  font-size: 1.2rem;
+}
+
+.momento p:last-child {
+  color: #3b5552;
+  font-size: 0.98rem;
+}
+
+@media (max-width: 960px) {
+  .noche__linea {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .noche__linea {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Alrededores */
+.alrededor {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 1.25rem;
+  margin-top: 1.75rem;
+}
+
+.alrededor__item {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  min-height: 260px;
+  color: var(--marfil);
+}
+
+.alrededor__item img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.alrededor__item:hover img {
+  transform: scale(1.04);
+}
+
+.alrededor__item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(9, 28, 24, 0.85) 0%, rgba(9, 28, 24, 0) 60%);
+}
+
+.alrededor__item--grande {
+  grid-row: span 2;
+  min-height: 540px;
+}
+
+.alrededor__texto {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1.25rem 1.4rem;
+  z-index: 1;
+}
+
+.alrededor__texto h3 {
+  color: var(--marfil);
+  margin-bottom: 0.25rem;
+}
+
+.alrededor__texto p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #e3ebe0;
+  max-width: 46ch;
+}
+
+.alrededor__item:nth-child(4) {
+  grid-column: 2 / span 2;
+}
+
+@media (max-width: 860px) {
+  .alrededor {
+    grid-template-columns: 1fr;
+  }
+
+  .alrededor__item--grande {
+    grid-row: auto;
+    min-height: 380px;
+  }
+
+  .alrededor__item:nth-child(4) {
+    grid-column: auto;
+  }
+}
+
+/* Cierre */
+.cierre {
+  position: relative;
+  isolation: isolate;
+  color: var(--marfil);
+  padding: 7rem 0;
+  text-align: center;
+  overflow: hidden;
+}
+
+.cierre__foto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+
+.cierre::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(9, 28, 24, 0.55);
+}
+
+.cierre h2 {
+  color: var(--marfil);
+  margin-top: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.cierre p {
+  font-size: 1.15rem;
+  margin-bottom: 1.75rem;
+  color: #e3ebe0;
+}
+
+/* Cabecera con foto en páginas internas */
+.cabecera-foto {
+  position: relative;
+  isolation: isolate;
+  color: var(--marfil);
+  padding: 150px 0 3rem;
+  overflow: hidden;
+}
+
+.cabecera-foto img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+
+.cabecera-foto::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(0deg, rgba(9, 28, 24, 0.78) 0%, rgba(9, 28, 24, 0.35) 100%);
+}
+
+.cabecera-foto h1 {
+  color: var(--marfil);
+  margin-bottom: 0.3rem;
+}
+
+.cabecera-foto p {
+  font-size: 1.15rem;
+  max-width: 60ch;
+  margin: 0;
+  color: #e3ebe0;
+}
+
+/* Galería del domo */
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 1.75rem;
+}
+
+.galeria__principal {
+  grid-column: 1 / -1;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--arco);
+}
+
+.galeria__item {
+  margin: 0;
+}
+
+.galeria__item img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.galeria__item figcaption {
+  font-size: 0.82rem;
+  color: var(--musgo);
+  margin-top: 0.3rem;
+}
+
+@media (max-width: 640px) {
+  .galeria {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Resultados de búsqueda */
+.resultado__foto {
+  border-radius: 999px 999px 14px 14px;
+}
+
+/* Ingresar y registro */
+.acceso {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: calc(100vh - 72px);
+}
+
+.acceso__formulario {
+  width: min(520px, 100% - 2.5rem);
+  margin: 0 auto;
+  padding: 3.5rem 0 4rem;
+}
+
+.acceso__foto {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.acceso__foto img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.acceso__foto::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(9, 28, 24, 0.75) 0%, rgba(9, 28, 24, 0) 50%);
+}
+
+.acceso__foto p {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 2.5rem;
+  font-family: var(--fuente-titulo);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 2.6vw, 2.2rem);
+  line-height: 1.15;
+  color: var(--marfil);
+  max-width: 18ch;
+}
+
+@media (max-width: 860px) {
+  .acceso {
+    grid-template-columns: 1fr;
+  }
+
+  .acceso__foto {
+    min-height: 260px;
+    order: -1;
+  }
+}
+
+.pie a {
+  color: var(--palma);
 }

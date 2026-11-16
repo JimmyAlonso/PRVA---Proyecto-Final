@@ -5,7 +5,7 @@ import { Aviso, Cargando } from '../components/Comunes';
 import { Cotizador, type EstanciaElegida } from '../components/Cotizador';
 import { dotacion } from '../components/Domos';
 import { dinero, hoyIso, nombreTemporada, sumarDias } from '../components/formato';
-import { RetratoDomo } from '../components/Ilustraciones';
+import { FOTOS, Foto, fotoDeDomo, urlFoto } from '../components/Fotos';
 import { mensajeDeError } from '../services/api';
 import { obtenerDomo } from '../services/sga';
 import type { Domo } from '../services/types';
@@ -59,12 +59,34 @@ export default function DomoDetalle() {
   if (!domo) return <section className="contenedor pagina"><Cargando /></section>;
 
   const dot = dotacion(domo);
+  const galeria = [
+    dot.jacuzzi && { id: FOTOS.jacuzzi, alt: 'Jacuzzi de madera calentado con leña', pie: 'Jacuzzi a leña' },
+    dot.fogata && { id: FOTOS.fogata, alt: 'Fogata encendida en la noche', pie: 'Fogata privada' },
+    dot.malla && { id: FOTOS.malla, alt: 'Malla tejida para descansar al aire libre', pie: 'Malla catamarán' },
+    dot.proyector && { id: FOTOS.domoNoche, alt: 'Domo iluminado en la noche', pie: 'Cine en el domo' },
+    { id: FOTOS.interiorDomo, alt: 'Techo de madera del domo visto desde adentro', pie: 'Así se ve el techo desde la cama' },
+    { id: FOTOS.estrellas, alt: 'Cielo estrellado entre los árboles', pie: 'El cielo de la vereda' },
+  ]
+    .filter((g): g is { id: string; alt: string; pie: string } => Boolean(g))
+    .slice(0, 4);
   return (
     <section className="contenedor pagina">
       <Link to="/domos" className="migas">Todos los domos</Link>
       <div className="detalle-domo">
         <div className="detalle-domo__principal">
-          <RetratoDomo id={domo.idDomo} {...dot} />
+          <div className="galeria">
+            <img
+              className="galeria__principal"
+              src={urlFoto(fotoDeDomo(domo.idDomo).id, 1400, 900)}
+              alt={fotoDeDomo(domo.idDomo).texto}
+            />
+            {galeria.map((g) => (
+              <figure key={g.id} className="galeria__item">
+                <Foto id={g.id} alt={g.alt} ancho={520} alto={380} />
+                <figcaption>{g.pie}</figcaption>
+              </figure>
+            ))}
+          </div>
           <div className="detalle-domo__titulo">
             <h1>{domo.nombre}</h1>
             <span className="codigo codigo--grande">{domo.idDomo}</span>

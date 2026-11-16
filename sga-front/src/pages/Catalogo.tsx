@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Aviso, Cargando } from '../components/Comunes';
 import { Buscador, TarjetaDomo } from '../components/Domos';
 import { aFecha, nombreTemporada } from '../components/formato';
+import { CabeceraFoto, FOTOS } from '../components/Fotos';
 import { mensajeDeError } from '../services/api';
 import { listarDomos, listarTemporadas } from '../services/sga';
 import type { Domo, Temporada } from '../services/types';
@@ -23,11 +24,11 @@ export default function Catalogo() {
   }, []);
 
   return (
+    <>
+    <CabeceraFoto id={FOTOS.cocoraValle} alt="Valle verde con palmas de cera en el Quindío" titulo="Los cinco domos">
+      <p>Cada uno mira hacia un lado distinto de la montaña. Las tarifas son por persona que paga y por noche.</p>
+    </CabeceraFoto>
     <section className="contenedor pagina">
-      <h1>Domos de JiyJu</h1>
-      <p className="texto-amplio">
-        Las tarifas son por persona que paga y por noche, y cambian según la temporada.
-      </p>
       <Buscador compacto />
       {error && <Aviso>{error}</Aviso>}
       {!domos && !error && <Cargando />}
@@ -59,5 +60,6 @@ export default function Catalogo() {
         </div>
       )}
     </section>
+    </>
   );
 }
