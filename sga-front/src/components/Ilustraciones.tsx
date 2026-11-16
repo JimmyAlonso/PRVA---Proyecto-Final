@@ -88,12 +88,12 @@ export function PaisajeCocora() {
       <path d="M0 390 C 200 330 340 380 520 345 C 700 310 860 370 1030 338 C 1110 323 1160 330 1200 326 L1200 520 L0 520 Z" fill="#265a50" />
       <g fill="#1d4a42">
         <Palma x={60} base={392} alto={210} escala={1.3} />
-        <Palma x={1010} base={348} alto={230} escala={1.35} />
+        <Palma x={640} base={346} alto={230} escala={1.35} />
       </g>
-      <DomoPaisaje x={380} y={372} r={34} />
-      <DomoPaisaje x={520} y={352} r={42} />
-      <DomoPaisaje x={668} y={356} r={30} />
-      <DomoPaisaje x={800} y={350} r={38} luz={false} />
+      <DomoPaisaje x={720} y={352} r={34} />
+      <DomoPaisaje x={850} y={358} r={44} />
+      <DomoPaisaje x={985} y={344} r={30} />
+      <DomoPaisaje x={1105} y={338} r={38} luz={false} />
       <path d="M0 440 C 240 400 420 450 640 418 C 860 386 1000 430 1200 410 L1200 520 L0 520 Z" fill="#2f6a5d" />
       <rect y="380" width="1200" height="140" fill="url(#niebla)" />
     </svg>
