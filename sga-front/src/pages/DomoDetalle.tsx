@@ -5,7 +5,7 @@ import { Aviso, Cargando } from '../components/Comunes';
 import { Cotizador, type EstanciaElegida } from '../components/Cotizador';
 import { dotacion } from '../components/Domos';
 import { dinero, hoyIso, nombreTemporada, sumarDias } from '../components/formato';
-import { FOTOS, Foto, fotoDeDomo, urlFoto } from '../components/Fotos';
+import { FOTOS, Foto, RELATO_DOMO, fotoDeDomo, urlFoto } from '../components/Fotos';
 import { mensajeDeError } from '../services/api';
 import { obtenerDomo } from '../services/sga';
 import type { Domo } from '../services/types';
@@ -91,7 +91,7 @@ export default function DomoDetalle() {
             <h1>{domo.nombre}</h1>
             <span className="codigo codigo--grande">{domo.idDomo}</span>
           </div>
-          <p className="texto-amplio">{domo.descripcion}</p>
+          <p className="texto-amplio">{RELATO_DOMO[domo.idDomo] ?? domo.descripcion}</p>
           {domo.estadoOperativo === 'FUERA_DE_SERVICIO' && (
             <Aviso tipo="info">Este domo está en mantenimiento. Puedes reservar fechas futuras si aparecen libres.</Aviso>
           )}
