@@ -24,7 +24,7 @@ function Mes({ anio, mes, noches, entrada, salida, elegir }: {
 
   return (
     <div className="mes">
-      <p className="mes__nombre">{nombreMes.format(primero)}</p>
+      <p className="mes__nombre">{(() => { const t = nombreMes.format(primero); return t.charAt(0).toUpperCase() + t.slice(1); })()}</p>
       <div className="mes__rejilla" role="grid">
         {DIAS.map((d) => (
           <span key={d} className="mes__dia-semana">
