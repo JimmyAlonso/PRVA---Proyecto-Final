@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { inicioSegunRol, useSesion } from '../auth/AuthContext';
 import { Aviso } from '../components/Comunes';
+import { FOTOS, Foto } from '../components/Fotos';
 import { mensajeDeError } from '../services/api';
 
 export default function Ingresar() {
@@ -30,7 +31,8 @@ export default function Ingresar() {
   };
 
   return (
-    <section className="contenedor pagina-estrecha">
+    <section className="acceso">
+      <div className="acceso__formulario">
       <h1>Ingresar</h1>
       {registrado && <Aviso tipo="exito">Tu cuenta quedó creada. Ingresa con tu correo y contraseña.</Aviso>}
       {volverA && !registrado && <Aviso tipo="info">Ingresa para continuar con tu reserva.</Aviso>}
@@ -51,6 +53,11 @@ export default function Ingresar() {
       <p className="texto-suave">
         ¿Primera vez? <Link to="/registro" state={{ volverA }}>Crea tu cuenta de huésped</Link>
       </p>
+      </div>
+      <div className="acceso__foto">
+        <Foto id={FOTOS.cocoraBruma} alt="Palmas de cera entre la bruma del Valle de Cocora" ancho={1100} alto={1400} eager />
+        <p>Qué bueno verte de nuevo por aquí.</p>
+      </div>
     </section>
   );
 }

@@ -26,7 +26,7 @@ export function Layout() {
       <a className="saltar" href="#contenido">
         Saltar al contenido
       </a>
-      <header className={`cabecera ${ubicacion.pathname === '/' ? 'cabecera--sobre-paisaje' : ''}`}>
+      <header className={`cabecera ${['/', '/domos', '/buscar'].includes(ubicacion.pathname) ? 'cabecera--sobre-paisaje' : ''}`}>
         <div className="contenedor cabecera__fila">
           <Link to="/" className="marca">
             <MarcaDomo />
@@ -83,6 +83,8 @@ export function Layout() {
             Proyecto final de Programación Avanzada, Universidad del Quindío.
             <br />
             July Tatiana Cartagena Mazo y Jimmy Alonso Arango.
+            <br />
+            Fotografías de <a href="https://unsplash.com" target="_blank" rel="noreferrer">Unsplash</a>.
           </p>
         </div>
       </footer>
