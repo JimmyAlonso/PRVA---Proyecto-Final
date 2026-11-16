@@ -129,6 +129,11 @@ public class SeguridadConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/reservas/*/cancelar")
                         .hasAnyRole(HUESPED, RECEPCIONISTA, ADMINISTRADOR)
 
+                        // --- Pago en línea del huésped: paga el anticipo y confirma su propia reserva.
+                        //     La propiedad se verifica con @PreAuthorize en los controllers.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/reservas/*/folio/pagos", "/api/v1/reservas/*/confirmar")
+                        .hasAnyRole(HUESPED, RECEPCIONISTA, ADMINISTRADOR)
+
                         // --- 7.1 Recepción: listado, modificación, ciclo de vida y folio
                         .requestMatchers("/api/v1/reservas", "/api/v1/reservas/**").hasAnyRole(RECEPCIONISTA, ADMINISTRADOR)
 
