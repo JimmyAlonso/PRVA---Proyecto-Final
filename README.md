@@ -6,6 +6,7 @@ Integrantes: July Tatiana Cartagena Mazo y Jimmy Alonso Arango.
 | Carpeta | Contenido |
 |---|---|
 | `sga/` | Backend Spring Boot (ver `sga/README.md`) |
+| `sga-front/` | Frontend React + Vite (ver `sga-front/README.md`) |
 
 ## Despliegue
 
