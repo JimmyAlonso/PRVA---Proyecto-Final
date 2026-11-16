@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Domo } from '../services/types';
 import { dinero, hoyIso, sumarDias } from './formato';
-import { RetratoDomo } from './Ilustraciones';
+import { FotoDomo } from './Fotos';
 
 export function dotacion(domo: Pick<Domo, 'tieneJacuzzi' | 'pesoMaximoMallaKg' | 'kitsFogata' | 'caracteristicas'>) {
   return {
@@ -23,7 +23,10 @@ export function TarjetaDomo({ domo, destino }: { domo: Domo; destino?: string })
   return (
     <article className="tarjeta-domo">
       <Link to={destino ?? `/domos/${domo.idDomo}`} className="tarjeta-domo__enlace">
-        <RetratoDomo id={domo.idDomo} {...dotacion(domo)} />
+        <div className="tarjeta-domo__marco">
+          <FotoDomo idDomo={domo.idDomo} ancho={640} />
+          {domo.tieneJacuzzi && <span className="sello">Jacuzzi a leña</span>}
+        </div>
         <div className="tarjeta-domo__cuerpo">
           <div className="tarjeta-domo__titulo">
             <h3>{domo.nombre}</h3>

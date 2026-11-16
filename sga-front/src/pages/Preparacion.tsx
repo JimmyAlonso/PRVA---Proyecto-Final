@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Aviso, Cargando } from '../components/Comunes';
-import { dotacion } from '../components/Domos';
-import { RetratoDomo } from '../components/Ilustraciones';
+import { FotoDomo } from '../components/Fotos';
 import { mensajeDeError } from '../services/api';
 import { iniciarPreparacion, marcarPreparado, pendientesPreparacion } from '../services/sga';
 import type { Domo } from '../services/types';
@@ -62,7 +61,7 @@ export default function Preparacion() {
         <ul className="lista-preparacion">
           {domos.map((d) => (
             <li key={d.idDomo}>
-              <RetratoDomo id={d.idDomo} {...dotacion(d)} />
+              <FotoDomo idDomo={d.idDomo} ancho={400} />
               <div>
                 <h2>{d.nombre} <span className="codigo">{d.idDomo}</span></h2>
                 <p className={`estado-domo estado-domo--${d.estadoOperativo.toLowerCase()}`}>{nombreEstadoDomo[d.estadoOperativo] ?? d.estadoOperativo}</p>
