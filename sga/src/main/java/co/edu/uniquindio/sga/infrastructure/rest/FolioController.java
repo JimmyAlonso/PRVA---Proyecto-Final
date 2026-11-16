@@ -7,10 +7,14 @@ import co.edu.uniquindio.sga.application.usecase.GestionarFolioUseCase;
 import co.edu.uniquindio.sga.domain.entity.Folio;
 import co.edu.uniquindio.sga.domain.valueobject.CodigoReserva;
 import co.edu.uniquindio.sga.domain.valueobject.Dinero;
+import co.edu.uniquindio.sga.domain.valueobject.MedioPago;
 import co.edu.uniquindio.sga.infrastructure.rest.mapper.FolioRestMapper;
+import co.edu.uniquindio.sga.infrastructure.security.UsuarioAutenticado;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,8 +52,14 @@ public class FolioController {
 
     /** RN-15: pago parcial con medio y fecha (anticipo, saldo, etc.). */
     @PostMapping("/pagos")
+    @PreAuthorize("@accesoReservas.puedeAcceder(#codigo, authentication)")
     public ResponseEntity<FolioResponse> registrarPago(@PathVariable String codigo,
-                                                       @Valid @RequestBody RegistrarPagoRequest request) {
+                                                       @Valid @RequestBody RegistrarPagoRequest request,
+                                                       @AuthenticationPrincipal UsuarioAutenticado usuario) {
+        // El huésped paga en línea: con tarjeta o transferencia, nunca en efectivo
+        if (usuario != null && usuario.esHuesped() && request.medio() == MedioPago.EFECTIVO) {
+            throw new AccessDeniedException("El pago en efectivo se registra en la recepción.");
+        }
         LocalDate fecha = request.fecha() != null ? request.fecha() : LocalDate.now(reloj);
         Folio folio = folioUseCase.registrarPago(new CodigoReserva(codigo), Dinero.de(request.monto()),
                 request.medio(), fecha);

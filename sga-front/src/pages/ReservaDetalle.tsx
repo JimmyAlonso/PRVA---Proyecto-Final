@@ -44,6 +44,7 @@ export default function ReservaDetalle() {
   const [cantidad, setCantidad] = useState(1);
   const [motivoCierre, setMotivoCierre] = useState('');
   const [confirmandoCancelacion, setConfirmandoCancelacion] = useState(false);
+  const [medioEnLinea, setMedioEnLinea] = useState<MedioPago>('TARJETA');
 
   const recargar = useCallback(async () => {
     try {
@@ -91,6 +92,20 @@ export default function ReservaDetalle() {
   const estado = reserva.estado;
   const cancelable = estado === 'PENDIENTE' || estado === 'CONFIRMADA';
 
+  const esPropia = !esPersonal && reserva.titular.documento === usuario?.documento;
+  const faltaAnticipo = Math.max(anticipo - pagado, 0);
+  const saldo = folio?.saldo ?? 0;
+
+  // Pago en línea del huésped: paga lo que falte del anticipo y confirma la reserva
+  const pagarYConfirmar = () =>
+    ejecutar(async () => {
+      if (faltaAnticipo > 0) await registrarPago(codigo, faltaAnticipo, medioEnLinea);
+      await confirmarReserva(codigo, hora);
+    }, '¡Pago recibido! Tu reserva quedó confirmada.');
+
+  const pagarSaldo = () =>
+    ejecutar(() => registrarPago(codigo, saldo, medioEnLinea), `Pago de ${dinero(saldo)} recibido.`);
+
   const pagar = (e: FormEvent) => {
     e.preventDefault();
     const valor = Number(monto);
@@ -119,9 +134,8 @@ export default function ReservaDetalle() {
 
       {!esPersonal && estado === 'PENDIENTE' && alojamiento && (
         <Aviso tipo="info">
-          Para confirmar tu reserva paga el anticipo de <strong>{dinero(anticipo)}</strong> ({alojamiento.anticipoPorcentaje} %) dentro de las{' '}
-          {alojamiento.plazoConfirmacionHoras} horas siguientes a su creación y envía el comprobante a recepción con el código{' '}
-          <strong>{reserva.codigo}</strong>. Si no se paga a tiempo, la reserva vence sola.
+          Tu reserva está apartada. Para confirmarla paga el anticipo de <strong>{dinero(anticipo)}</strong> ({alojamiento.anticipoPorcentaje} %)
+          dentro de las {alojamiento.plazoConfirmacionHoras} horas siguientes a su creación. Si no se paga a tiempo, la reserva vence sola.
         </Aviso>
       )}
       {!esPersonal && estado === 'CONFIRMADA' && alojamiento && (
@@ -203,6 +217,53 @@ export default function ReservaDetalle() {
 
         <aside className="reserva-detalle__acciones">
           {errorAccion && <Aviso>{errorAccion}</Aviso>}
+
+          {esPropia && estado === 'PENDIENTE' && alojamiento && (
+            <Accion
+              titulo="Pagar el anticipo"
+              descripcion={`Pagas ${dinero(faltaAnticipo)} ahora y el resto (${dinero(Math.max(reserva.valorTotal - anticipo, 0))}) al llegar.`}
+            >
+              <div className="formulario formulario--compacto">
+                <fieldset className="medios-pago">
+                  <legend className="texto-suave">Medio de pago</legend>
+                  <label className={`medio ${medioEnLinea === 'TARJETA' ? 'medio--activo' : ''}`}>
+                    <input type="radio" name="medio" checked={medioEnLinea === 'TARJETA'} onChange={() => setMedioEnLinea('TARJETA')} />
+                    Tarjeta débito o crédito
+                  </label>
+                  <label className={`medio ${medioEnLinea === 'TRANSFERENCIA' ? 'medio--activo' : ''}`}>
+                    <input type="radio" name="medio" checked={medioEnLinea === 'TRANSFERENCIA'} onChange={() => setMedioEnLinea('TRANSFERENCIA')} />
+                    Transferencia bancaria (PSE)
+                  </label>
+                </fieldset>
+                <label>
+                  ¿A qué hora crees que llegas?
+                  <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
+                </label>
+                <button className="boton boton--fogata boton--ancho" disabled={ocupado} onClick={pagarYConfirmar}>
+                  {ocupado ? 'Procesando…' : `Pagar ${dinero(faltaAnticipo)} y confirmar`}
+                </button>
+                <small className="texto-suave">Pago simulado para el proyecto académico: no se cobra dinero real.</small>
+              </div>
+            </Accion>
+          )}
+
+          {esPropia && (estado === 'CONFIRMADA' || estado === 'EN_CURSO') && saldo > 0 && (
+            <Accion titulo="Pagar el saldo" descripcion={`Te falta pagar ${dinero(saldo)}. Puedes hacerlo ahora o al llegar.`}>
+              <div className="formulario formulario--compacto">
+                <label>
+                  Medio de pago
+                  <select value={medioEnLinea} onChange={(e) => setMedioEnLinea(e.target.value as MedioPago)}>
+                    <option value="TARJETA">Tarjeta débito o crédito</option>
+                    <option value="TRANSFERENCIA">Transferencia bancaria (PSE)</option>
+                  </select>
+                </label>
+                <button className="boton boton--contorno boton--ancho" disabled={ocupado} onClick={pagarSaldo}>
+                  Pagar {dinero(saldo)}
+                </button>
+                <small className="texto-suave">Pago simulado: no se cobra dinero real.</small>
+              </div>
+            </Accion>
+          )}
 
           {esPersonal && (estado === 'PENDIENTE' || estado === 'CONFIRMADA' || estado === 'EN_CURSO') && (
             <Accion
