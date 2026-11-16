@@ -38,6 +38,20 @@ export const FOTO_DOMO: Record<string, { id: string; texto: string }> = {
   'DOM-05': { id: '1772423847112-c978f25f7a61', texto: 'Domo en una ladera verde junto al sendero' },
 };
 
+/** Relato de cada domo, escrito a partir de su dotación en la Ficha A. */
+export const RELATO_DOMO: Record<string, string> = {
+  'DOM-01':
+    'El domo con la vista más abierta de la finca. Desde la cama se ve la cordillera, y en la terraza te esperan el jacuzzi a leña y la malla catamarán para quedarte mirando las nubes. Pensado para dos.',
+  'DOM-02':
+    'Rodeado de árboles y con la terraza asomada al valle. En la mañana la niebla sube por la ladera y en la noche el jacuzzi a leña es el mejor lugar para ver las estrellas. Pensado para dos.',
+  'DOM-03':
+    'Para venir en familia o con amigos: doble espacio para que todos duerman cómodos, una zona de fogata amplia para las conversaciones largas y jacuzzi para compartir.',
+  'DOM-04':
+    'Nuestro domo para ocasiones especiales. Terraza privada, malla catamarán y un proyector para ver una película acostados, con la montaña afuera. Pensado para dos.',
+  'DOM-05':
+    'Con salida directa a los senderos de la montaña. Doble espacio, zona de fogata y jacuzzi ecológico: el favorito de quienes vienen a caminar y quieren llegar a descansar.',
+};
+
 const RESERVA = FOTO_DOMO['DOM-01'];
 
 export function fotoDeDomo(idDomo: string) {
