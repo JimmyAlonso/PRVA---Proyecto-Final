@@ -1,7 +1,19 @@
-// Fotografías de Unsplash (licencia Unsplash: uso libre, sin costo). Se sirven desde su CDN
-// con el tamaño justo para cada lugar de la página.
+// =====================================================================================
+//  FOTOS DE LA PÁGINA — cómo cambiarlas
+//
+//  Cada foto se escribe de una de estas dos formas:
+//   1. Foto propia: súbela a la carpeta sga-front/public/fotos/ y escribe su ruta,
+//      por ejemplo '/fotos/mi-domo.jpg'
+//   2. Foto de Unsplash: abre la foto en unsplash.com, clic derecho sobre la imagen →
+//      "Copiar dirección de imagen", y pega aquí solo la parte entre "photo-" y "?",
+//      por ejemplo '1641569618527-68e26db76db0'
+//
+//  Al guardar en GitHub (rama master), Vercel publica el cambio solo en 1 o 2 minutos.
+// =====================================================================================
 
 export function urlFoto(id: string, ancho = 1200, alto?: number): string {
+  // Foto propia (carpeta public/fotos) o enlace completo: se usa tal cual
+  if (id.startsWith('/') || id.startsWith('http')) return id;
   const tam = alto ? `&h=${alto}&fit=crop` : '';
   return `https://images.unsplash.com/photo-${id}?w=${ancho}${tam}&q=75&auto=format`;
 }
