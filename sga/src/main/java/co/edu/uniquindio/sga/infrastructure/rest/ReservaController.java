@@ -181,6 +181,7 @@ public class ReservaController {
     // ------------------------------------------------------------------ ciclo de vida (sección 8)
 
     @PostMapping("/{codigo}/confirmar")
+    @PreAuthorize(PROPIETARIO)
     public ResponseEntity<ReservaDetalleResponse> confirmar(@PathVariable String codigo,
                                                             @RequestBody(required = false) ConfirmarReservaRequest request) {
         Reserva reserva = confirmarReservaUseCase.ejecutar(new CodigoReserva(codigo),
