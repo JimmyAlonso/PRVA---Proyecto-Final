@@ -12,8 +12,8 @@ Integrantes: July Tatiana Cartagena Mazo y Jimmy Alonso Arango.
 | Parte | URL |
 |---|---|
 | Aplicación | _pendiente: URL de Vercel_ |
-| API | _pendiente: https://sga-api-jiyju.onrender.com_ |
-| Estado del API | _pendiente: https://sga-api-jiyju.onrender.com/actuator/health_ |
+| API | https://sga-api-jiyju.onrender.com |
+| Estado del API | https://sga-api-jiyju.onrender.com/actuator/health |
 
 > El API usa el plan gratuito de Render: la primera petición después de 15 minutos sin uso tarda
 > cerca de un minuto, y los datos vuelven al estado inicial en cada reinicio.
