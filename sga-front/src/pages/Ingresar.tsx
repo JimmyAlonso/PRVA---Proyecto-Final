@@ -35,7 +35,7 @@ export default function Ingresar() {
       <div className="acceso__formulario">
       <h1>Ingresar</h1>
       {registrado && <Aviso tipo="exito">Tu cuenta quedó creada. Ingresa con tu correo y contraseña.</Aviso>}
-      {volverA && !registrado && <Aviso tipo="info">Ingresa para continuar con tu reserva.</Aviso>}
+      {volverA && !registrado && <Aviso tipo="info">Ingresa con tu cuenta para continuar.</Aviso>}
       <form className="formulario" onSubmit={enviar}>
         <label>
           Correo
