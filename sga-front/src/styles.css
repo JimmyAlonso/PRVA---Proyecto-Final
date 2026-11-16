@@ -22,6 +22,7 @@
   --fuente-texto: 'Public Sans', 'Segoe UI', system-ui, sans-serif;
 
   --arco: 999px 999px 18px 18px;
+  --arco-foto: 50% 50% 16px 16px / 22% 22% 16px 16px;
   --radio: 10px;
   --ancho: 1160px;
 }
@@ -734,8 +735,8 @@ legend {
 
 .rejilla-domos {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 2.25rem 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2.5rem 1.75rem;
   margin-top: 1.5rem;
 }
 
@@ -1771,7 +1772,7 @@ main:has(.banda-montana) + .pie {
   width: 100%;
   aspect-ratio: 3 / 2;
   object-fit: cover;
-  border-radius: var(--arco);
+  border-radius: var(--arco-foto);
   background: var(--neblina-2);
 }
 
@@ -1882,7 +1883,7 @@ main:has(.banda-montana) + .pie {
 }
 
 .momento:nth-child(even) .momento__foto {
-  border-radius: var(--arco);
+  border-radius: var(--arco-foto);
 }
 
 .momento__hora {
@@ -2086,7 +2087,7 @@ main:has(.banda-montana) + .pie {
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
-  border-radius: var(--arco);
+  border-radius: var(--arco-foto);
 }
 
 .galeria__item {
@@ -2114,7 +2115,7 @@ main:has(.banda-montana) + .pie {
 
 /* Resultados de búsqueda */
 .resultado__foto {
-  border-radius: 999px 999px 14px 14px;
+  border-radius: var(--arco-foto);
 }
 
 /* Ingresar y registro */
