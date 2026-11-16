@@ -29,6 +29,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 
+	// --- Health check para Render: /actuator/health (Guía 22) ---
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
 	// --- Seguridad: Spring Security + JWT (Guía 12) ---
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
@@ -54,6 +57,11 @@ dependencies {
 tasks.withType(JavaCompile).configureEach {
 	// MapStruct: los mappers generados se registran como beans de Spring
 	options.compilerArgs += ['-Amapstruct.defaultComponentModel=spring']
+}
+
+// Guía 22: el contenedor copia un solo .jar (el ejecutable de bootJar); no se genera el -plain.jar
+tasks.named('jar') {
+	enabled = false
 }
 
 tasks.named('test') {

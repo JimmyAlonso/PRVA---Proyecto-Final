@@ -1,5 +1,6 @@
 package co.edu.uniquindio.sga.infrastructure.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,6 +13,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 7.1 y 7.2: matriz de roles. Cada endpoint queda protegido por rol aquí, en un solo lugar; los
@@ -36,11 +42,19 @@ public class SeguridadConfig {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Guía 22 (4.5): en producción (perfil prod) Swagger y la consola de H2 quedan cerradas.
+     */
+    @Value("${sga.seguridad.herramientas-desarrollo:true}")
+    private boolean herramientasDesarrollo;
+
     @Bean
     public SecurityFilterChain cadenaDeSeguridad(HttpSecurity http, JwtService jwtService,
-                                                 RespuestasSeguridad respuestas) throws Exception {
+                                                 RespuestasSeguridad respuestas,
+                                                 UrlBasedCorsConfigurationSource corsConfigurationSource) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)                       // API sin sesión ni cookies
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))   // Guía 22 (4.3)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))   // consola de H2
@@ -48,11 +62,15 @@ public class SeguridadConfig {
                 .exceptionHandling(errores -> errores
                         .authenticationEntryPoint(respuestas)                // 401
                         .accessDeniedHandler(respuestas))                    // 403
-                .authorizeHttpRequests(reglas -> reglas
-                        // --- Documentación, consola de H2 y errores
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs/**", "/v3/api-docs/**",
-                                "/h2-console/**", "/error").permitAll()
-
+                .authorizeHttpRequests(reglas -> {
+                    // --- Guía 22 (4.4): health check público para Render, y errores
+                    reglas.requestMatchers("/actuator/health", "/actuator/health/**", "/error").permitAll();
+                    // --- Documentación y consola de H2: solo fuera de producción (Guía 22, 4.5)
+                    if (herramientasDesarrollo) {
+                        reglas.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs/**", "/v3/api-docs/**",
+                                "/h2-console/**").permitAll();
+                    }
+                    reglas
                         // --- 7.2 Registro público, inicio de sesión y recuperación de contraseña
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
 
@@ -114,8 +132,33 @@ public class SeguridadConfig {
                         // --- 7.1 Recepción: listado, modificación, ciclo de vida y folio
                         .requestMatchers("/api/v1/reservas", "/api/v1/reservas/**").hasAnyRole(RECEPCIONISTA, ADMINISTRADOR)
 
-                        .anyRequest().authenticated())
+                        .anyRequest().authenticated();
+                })
                 .addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    /**
+     * Guía 22 (4.3): CORS dentro de la cadena de Spring Security. Los orígenes permitidos se leen de
+     * sga.cors.allowed-origins (en Render: variable SGA_CORS_ALLOWED_ORIGINS), separados por coma.
+     */
+    @Bean
+    public UrlBasedCorsConfigurationSource corsConfigurationSource(
+            @Value("${sga.cors.allowed-origins:http://localhost:5173,http://localhost:5174}") String origenes) {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(Arrays.stream(origenes.split(","))
+                .map(String::trim)
+                .map(origen -> origen.endsWith("/") ? origen.substring(0, origen.length() - 1) : origen)
+                .filter(origen -> !origen.isEmpty())
+                .toList());
+        // Métodos del API del SGA: DELETE se usa para eliminar usuarios (7.1)
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        config.setExposedHeaders(List.of("Location"));
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", config);
+        return source;
     }
 }

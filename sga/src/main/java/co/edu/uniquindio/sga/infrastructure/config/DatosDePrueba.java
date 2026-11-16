@@ -47,7 +47,9 @@ import co.edu.uniquindio.sga.domain.valueobject.Tarifa;
 import co.edu.uniquindio.sga.domain.valueobject.TipoNovedad;
 import co.edu.uniquindio.sga.domain.valueobject.TramoRetencion;
 import co.edu.uniquindio.sga.domain.valueobject.VersionPolitica;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
@@ -65,9 +67,15 @@ import java.util.logging.Logger;
  * de los casos de uso para que pasen por las mismas reglas que la API.
  *
  * <p>Se desactiva con sga.datos-prueba.habilitados=false (por ejemplo, en pruebas).
+ *
+ * <p>Guía 22: con sga.datos-prueba.demo=false (perfil prod) solo se carga el catálogo (temporadas,
+ * domos y política). Los usuarios de demostración, cuyas contraseñas están publicadas en el
+ * repositorio, y los escenarios de reservas no se crean; la cuenta de producción la crea
+ * {@link UsuarioAdministradorInicial} con datos que llegan por variables de entorno.
  * Las fechas de festivos son datos (calendario colombiano 2026-2027), no reglas.
  */
 @Component
+@Order(1)
 public class DatosDePrueba implements CommandLineRunner {
 
     private static final Logger LOG = Logger.getLogger(DatosDePrueba.class.getName());
@@ -95,6 +103,9 @@ public class DatosDePrueba implements CommandLineRunner {
     private final CanalExternoUseCase canalExterno;
     private final AdministrarUsuariosUseCase usuarios;
     private final Clock reloj;
+
+    @Value("${sga.datos-prueba.demo:true}")
+    private boolean demo;
 
     public DatosDePrueba(SgaProperties propiedades, TemporadaRepository temporadas, DomoRepository domos,
                          PoliticaCancelacionRepository politicas, FolioRepository folios,
@@ -137,6 +148,10 @@ public class DatosDePrueba implements CommandLineRunner {
         cargarTemporadas();
         cargarDomos();
         cargarPolitica();
+        if (!demo) {
+            LOG.info("Catálogo de JiyJu Glamping cargado (sin usuarios ni reservas de demostración).");
+            return;
+        }
         cargarUsuarios();
         cargarReservas();
         cargarEstadosOperativos();
