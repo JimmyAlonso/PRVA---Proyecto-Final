@@ -12,7 +12,7 @@ Integrantes: July Tatiana Cartagena Mazo y Jimmy Alonso Arango.
 
 | Parte | URL |
 |---|---|
-| Aplicación | _pendiente: URL de Vercel_ |
+| Aplicación | https://jiyju-glamping.vercel.app |
 | API | https://sga-api-jiyju.onrender.com |
 | Estado del API | https://sga-api-jiyju.onrender.com/actuator/health |
 
