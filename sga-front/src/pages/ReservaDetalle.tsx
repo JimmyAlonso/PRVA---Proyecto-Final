@@ -274,7 +274,7 @@ export default function ReservaDetalle() {
                 <div className="formulario__par">
                   <label>
                     Monto
-                    <input type="number" min={1} step={1000} value={monto} placeholder={anticipo ? String(Math.max(anticipo - pagado, 0)) : ''} onChange={(e) => setMonto(e.target.value)} />
+                    <input type="number" min={1} step={1} value={monto} placeholder={anticipo ? String(Math.max(anticipo - pagado, 0)) : ''} onChange={(e) => setMonto(e.target.value)} />
                   </label>
                   <label>
                     Medio
